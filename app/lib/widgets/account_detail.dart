@@ -296,9 +296,9 @@ class _AccountDetailPageState extends State<AccountDetailPage> {
                                                         child: Icon(
                                                           isExpanded
                                                               ? Icons
-                                                                  .arrow_drop_up
+                                                                  .keyboard_arrow_up
                                                               : Icons
-                                                                  .arrow_drop_down,
+                                                                  .keyboard_arrow_down,
                                                           color: Colors.white,
                                                           size: 28,
                                                         ))

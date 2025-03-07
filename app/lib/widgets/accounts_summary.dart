@@ -101,8 +101,8 @@ class _AccountsSummaryListState extends State<AccountsSummaryList> {
                                               child: Icon(
                                                 isExpanded ==
                                                         account.accountNumber
-                                                    ? Icons.arrow_drop_up
-                                                    : Icons.arrow_drop_down,
+                                                    ? Icons.keyboard_arrow_up
+                                                    : Icons.keyboard_arrow_down,
                                                 size: 28,
                                               ))
                                         ]),

@@ -18,119 +18,187 @@ class BankDetail extends StatefulWidget {
 }
 
 class _BankDetailState extends State<BankDetail> {
+  bool isBankDetailExpanded = false;
   @override
   Widget build(BuildContext context) {
     // Replace with your actual data fetching logic
     return Column(
       children: [
-        Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            color: Colors.blueAccent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20.0),
-            ),
-            elevation: 1,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF172B6D),
-                    Color(0xFF274AB9),
-                  ],
-                ),
+        GestureDetector(
+            onTap: () {
+              setState(() {
+                isBankDetailExpanded = !isBankDetailExpanded;
+              });
+            },
+            child: Card(
+              margin:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              color: Colors.blueAccent,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20.0),
               ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16.0, 28.0, 16.0, 28.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.asset(
-                          AppConstants.banks
-                              .firstWhere(
-                                  (element) => element.id == widget.bankId)
-                              .image,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 4,
-                    ),
-                    Text(
-                      AppConstants.banks
-                          .firstWhere((element) => element.id == widget.bankId)
-                          .name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFFF1F4FF),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 4,
-                    ),
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'ACCOUNT BALANCE',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF9FABD2),
-                            fontWeight: FontWeight.w500,
+              elevation: 1,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF172B6D),
+                      Color(0xFF274AB9),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20.0),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16.0, 28.0, 16.0, 28.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(
+                            AppConstants.banks
+                                .firstWhere(
+                                    (element) => element.id == widget.bankId)
+                                .image,
+                            fit: BoxFit.cover,
                           ),
                         ),
-                        SizedBox(width: 8),
-                        Icon(
-                          Icons.remove_red_eye_outlined,
-                          size: 20,
-                          color: Color(0xFF9FABD2),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(
-                      height: 4,
-                    ),
-                    Container(
-                      width: double.infinity,
-                      child: Text(
-                        widget.accountSummaries
-                            .fold(
-                                0.0,
-                                (sum, bank) =>
-                                    sum + bank.totalCredit - bank.totalDebit)
-                            .toString(),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold),
                       ),
-                    ),
-                  ],
+                      const SizedBox(
+                        height: 4,
+                      ),
+                      Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment
+                              .spaceBetween, // Centers horizontally
+                          children: [
+                            Text(
+                              AppConstants.banks
+                                  .firstWhere(
+                                      (element) => element.id == widget.bankId)
+                                  .name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFFF1F4FF),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 5,
+                            ),
+                            Icon(
+                              isBankDetailExpanded
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              color: Color(0xFFF1F4FF),
+                            ),
+                          ]),
+                      const SizedBox(
+                        height: 4,
+                      ),
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'ACCOUNT BALANCE',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF9FABD2),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(
+                            Icons.remove_red_eye_outlined,
+                            size: 20,
+                            color: Color(0xFF9FABD2),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 4,
+                      ),
+                      Container(
+                        width: double.infinity,
+                        child: Text(
+                          widget.accountSummaries
+                              .fold(
+                                  0.0,
+                                  (sum, bank) =>
+                                      sum + bank.totalCredit - bank.totalDebit)
+                              .toString(),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      isBankDetailExpanded
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment
+                                  .spaceBetween, // Centers horizontally
+                              children: [
+                                Text(
+                                  "Total Credit",
+                                  style: TextStyle(
+                                    color: Colors.grey[500],
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                    widget.accountSummaries
+                                        .fold(
+                                            0.0,
+                                            (sum, bank) =>
+                                                sum + bank.totalCredit)
+                                        .toString(),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    )),
+                              ],
+                            )
+                          : Container(),
+                      isBankDetailExpanded
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment
+                                  .spaceBetween, // Centers horizontally
+                              children: [
+                                Text(
+                                  "Total Debit",
+                                  style: TextStyle(
+                                    color: Colors.grey[500],
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                    widget.accountSummaries
+                                        .fold(
+                                            0.0,
+                                            (sum, bank) =>
+                                                sum + bank.totalDebit)
+                                        .toString(),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    )),
+                              ],
+                            )
+                          : Container(),
+                    ],
+                  ),
                 ),
               ),
             )),
-        Container(
-          height: 8,
-          decoration: const BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: const Color(0xFFEEEEEE),
-                width: .5,
-              ),
-            ),
-          ),
-        ),
         AccountsSummaryList(accountSummaries: widget.accountSummaries)
       ],
     );
