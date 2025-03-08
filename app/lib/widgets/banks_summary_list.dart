@@ -3,10 +3,17 @@ import 'package:flutter/widgets.dart';
 import 'package:totals/data/consts.dart';
 import 'package:totals/main.dart';
 
-class BanksSummaryList extends StatelessWidget {
+class BanksSummaryList extends StatefulWidget {
   final List<BankSummary> banks;
 
   BanksSummaryList({required this.banks});
+
+  @override
+  State<BanksSummaryList> createState() => _BanksSummaryListState();
+}
+
+class _BanksSummaryListState extends State<BanksSummaryList> {
+  int? isExpanded;
 
   @override
   Widget build(BuildContext context) {
@@ -14,71 +21,148 @@ class BanksSummaryList extends StatelessWidget {
       // Add Expanded to give ListView a defined size
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: banks.length,
+        itemCount: widget.banks.length,
         itemBuilder: (context, index) {
-          final bank = banks[index];
+          final bank = widget.banks[index];
           return Column(
             children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.white,
-                  border: Border.all(color: const Color(0xFFEEEEEE)),
-                ),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 60,
-                      height: 60,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.asset(
-                          AppConstants.banks
-                              .firstWhere(
-                                  (element) => element.id == bank.bankId)
-                              .image,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+              GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (isExpanded == null) {
+                        isExpanded = bank.bankId;
+                      } else if (isExpanded == bank.bankId) {
+                        isExpanded = null;
+                      } else {
+                        isExpanded = bank.bankId;
+                      }
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white,
+                      border: Border.all(color: const Color(0xFFEEEEEE)),
                     ),
-                    const SizedBox(
-                      width: 16,
-                    ),
-                    Container(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Column(children: [
+                      Row(
                         children: [
-                          Text(
-                            AppConstants.banks
-                                .firstWhere(
-                                    (element) => element.id == bank.bankId)
-                                .name,
-                            style: const TextStyle(
-                              fontSize: 16,
+                          SizedBox(
+                            width: 60,
+                            height: 60,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.asset(
+                                AppConstants.banks
+                                    .firstWhere(
+                                        (element) => element.id == bank.bankId)
+                                    .image,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
-                          Text(
-                            bank.accountCount.toString() + ' accounts',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
+                          const SizedBox(
+                            width: 16,
+                          ),
+                          Container(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisSize: MainAxisSize.max,
+                                    children: [
+                                      Text(
+                                        AppConstants.banks
+                                            .firstWhere((element) =>
+                                                element.id == bank.bankId)
+                                            .name,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        width: 10,
+                                      ),
+                                      Icon(
+                                        isExpanded == bank.bankId
+                                            ? Icons.keyboard_arrow_up
+                                            : Icons.keyboard_arrow_down,
+                                      )
+                                    ]),
+                                Text(
+                                  bank.accountCount.toString() + ' accounts',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                Text(
+                                    (bank.totalCredit - bank.totalDebit)
+                                            .toStringAsFixed(2) +
+                                        " ETB",
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    )),
+                              ],
                             ),
                           ),
-                          Text(
-                              (bank.totalCredit - bank.totalDebit)
-                                      .toStringAsFixed(2) +
-                                  " ETB",
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              )),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
+                      isExpanded == bank.bankId
+                          ? Column(
+                              children: [
+                                const SizedBox(
+                                  height: 15,
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment
+                                      .spaceBetween, // Centers horizontally
+                                  children: [
+                                    Text(
+                                      "Total Credit",
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    Text("${bank.totalCredit.toString()} ETB",
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        )),
+                                  ],
+                                ),
+                                const SizedBox(
+                                  height: 5,
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "Total Debit",
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    Text("${bank.totalDebit.toString()} ETB",
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        )),
+                                  ],
+                                ),
+                              ],
+                            )
+                          : Container()
+                    ]),
+                  )),
               const SizedBox(
                 height: 13,
               )

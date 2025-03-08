@@ -31,7 +31,7 @@ onBackgroundMessage(SmsMessage message) async {
   }
 
   try {
-    if (message.address == "+251943685872") {
+    if (message.address == "CBE") {
       var details = SmsUtils.extractCBETransactionDetails(message.body!);
       SharedPreferences prefs = await SharedPreferences.getInstance();
       var allTransactions = prefs.getStringList("transactions") ?? [];
@@ -682,7 +682,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
+  bool allSummaryDetailExpanded = false;
   @override
   Widget build(BuildContext context) {
     return !_isAuthenticated
@@ -906,92 +906,176 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     ? Expanded(
                         child: Column(
                         children: [
-                          Card(
-                              margin: const EdgeInsets.symmetric(
-                                  horizontal: 16.0, vertical: 8.0),
-                              color: Colors.blueAccent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20.0),
-                              ),
-                              elevation: 1,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      Color(0xFF172B6D), // Your first color
-                                      Color(0xFF274AB9), // Your second color
-                                    ],
+                          GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  allSummaryDetailExpanded =
+                                      !allSummaryDetailExpanded;
+                                });
+                              },
+                              child: Card(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 16.0, vertical: 8.0),
+                                  color: Colors.blueAccent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20.0),
                                   ),
-                                  borderRadius: BorderRadius.circular(20.0),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                      16.0, 28.0, 16.0, 28.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Row(
-                                        mainAxisAlignment: MainAxisAlignment
-                                            .center, // Centers horizontally
+                                  elevation: 1,
+                                  child: Container(
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            Color(0xFF172B6D),
+                                            Color(0xFF274AB9),
+                                          ],
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(20.0),
+                                      ),
+                                      child: Column(
                                         children: [
-                                          Text(
-                                            'TOTAL BALANCE',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Color(0xFF9FABD2),
-                                              fontWeight: FontWeight.w500,
+                                          Padding(
+                                            padding: const EdgeInsets.fromLTRB(
+                                                16.0, 28.0, 16.0, 28.0),
+                                            child: Column(
+                                              children: [
+                                                const Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Text(
+                                                      'TOTAL BALANCE',
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                        color:
+                                                            Color(0xFF9FABD2),
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Icon(
+                                                      Icons
+                                                          .remove_red_eye_outlined,
+                                                      size: 20,
+                                                      color: Color(0xFF9FABD2),
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                  ],
+                                                ),
+                                                const SizedBox(
+                                                  height: 4,
+                                                ),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Text(
+                                                      "${summary?.totalCredit ?? 0 - (summary?.totalDebit ?? 0)} ETB",
+                                                      style: TextStyle(
+                                                          fontSize: 22,
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.bold
+                                                          // Subtle text color
+                                                          ),
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Icon(
+                                                      allSummaryDetailExpanded
+                                                          ? Icons
+                                                              .keyboard_arrow_up
+                                                          : Icons
+                                                              .keyboard_arrow_down,
+                                                      color: Colors.white,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                  ],
+                                                ),
+                                                const SizedBox(
+                                                  height: 4,
+                                                ),
+                                                Container(
+                                                  width: double.infinity,
+                                                  child: Text(
+                                                    "4 Banks | $totalAccounts Accounts",
+                                                    textAlign: TextAlign.center,
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      color: Color(0xFFF7F8FB),
+                                                      // Subtle text color
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          SizedBox(width: 8),
-                                          Icon(
-                                            Icons
-                                                .remove_red_eye_outlined, // You can change this icon
-                                            size: 20,
-                                            color: Color(0xFF9FABD2),
-                                          ),
-                                          SizedBox(
-                                              width:
-                                                  8), // Add spacing between icon and text
+                                          allSummaryDetailExpanded
+                                              ? Padding(
+                                                  padding:
+                                                      const EdgeInsets.fromLTRB(
+                                                          16.0, 0, 16.0, 28.0),
+                                                  child: Column(
+                                                    children: [
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween, // Centers horizontally
+                                                        children: [
+                                                          Text(
+                                                            "Total Credit",
+                                                            style: TextStyle(
+                                                              color: Colors
+                                                                  .grey[500],
+                                                              fontSize: 13,
+                                                            ),
+                                                          ),
+                                                          Text(
+                                                              summary?.totalCredit
+                                                                      .toString() ??
+                                                                  "",
+                                                              style: const TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  fontSize: 13,
+                                                                  color: Colors
+                                                                      .white)),
+                                                        ],
+                                                      ),
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween, // Centers horizontally
+                                                        children: [
+                                                          Text(
+                                                            "Total Debit",
+                                                            style: TextStyle(
+                                                              color: Colors
+                                                                  .grey[500],
+                                                              fontSize: 13,
+                                                            ),
+                                                          ),
+                                                          Text(
+                                                              summary?.totalDebit
+                                                                      .toString() ??
+                                                                  "",
+                                                              style: const TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  fontSize: 13,
+                                                                  color: Colors
+                                                                      .white)),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ))
+                                              : Container()
                                         ],
-                                      ),
-                                      const SizedBox(
-                                        height: 4,
-                                      ),
-                                      Container(
-                                        width: double.infinity,
-                                        child: Text(
-                                          "${summary?.totalCredit ?? 0 - (summary?.totalDebit ?? 0)} ETB*",
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                              fontSize: 22,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold
-                                              // Subtle text color
-                                              ),
-                                        ),
-                                      ),
-                                      const SizedBox(
-                                        height: 4,
-                                      ),
-                                      Container(
-                                        width: double.infinity,
-                                        child: Text(
-                                          "4 Banks | $totalAccounts Accounts",
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            color: Color(0xFFF7F8FB),
-                                            // Subtle text color
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )),
+                                      )))),
                           const SizedBox(
                             height: 12,
                           ),
