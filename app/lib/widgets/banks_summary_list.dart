@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:totals/data/consts.dart';
 import 'package:totals/main.dart';
+import 'package:totals/utils/text_utils.dart';
 
 class BanksSummaryList extends StatefulWidget {
   final List<BankSummary> banks;
@@ -101,8 +102,7 @@ class _BanksSummaryListState extends State<BanksSummaryList> {
                                   ),
                                 ),
                                 Text(
-                                    (bank.totalCredit - bank.totalDebit)
-                                            .toStringAsFixed(2) +
+                                    (formatNumberWithComma(bank.totalBalance)) +
                                         " ETB",
                                     style: const TextStyle(
                                       fontSize: 14,
@@ -126,11 +126,12 @@ class _BanksSummaryListState extends State<BanksSummaryList> {
                                     Text(
                                       "Total Credit",
                                       style: TextStyle(
-                                        color: Colors.grey[500],
+                                        color: Colors.black,
                                         fontSize: 13,
                                       ),
                                     ),
-                                    Text("${bank.totalCredit.toString()} ETB",
+                                    Text(
+                                        "${formatNumberWithComma(bank.totalCredit).toString()} ETB",
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
@@ -144,14 +145,15 @@ class _BanksSummaryListState extends State<BanksSummaryList> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
+                                    const Text(
                                       "Total Debit",
                                       style: TextStyle(
-                                        color: Colors.grey[500],
+                                        color: Colors.black,
                                         fontSize: 13,
                                       ),
                                     ),
-                                    Text("${bank.totalDebit.toString()} ETB",
+                                    Text(
+                                        "${formatNumberWithComma(bank.totalDebit).toString()} ETB",
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,

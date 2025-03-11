@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:totals/data/consts.dart';
 import 'package:totals/main.dart';
+import 'package:totals/utils/text_utils.dart';
 import 'package:totals/widgets/accounts_summary.dart';
 
 class BankDetail extends StatefulWidget {
@@ -19,6 +20,7 @@ class BankDetail extends StatefulWidget {
 
 class _BankDetailState extends State<BankDetail> {
   bool isBankDetailExpanded = false;
+  bool showTotalBalance = false;
   @override
   Widget build(BuildContext context) {
     // Replace with your actual data fetching logic
@@ -102,10 +104,10 @@ class _BankDetailState extends State<BankDetail> {
                       const SizedBox(
                         height: 4,
                       ),
-                      const Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
+                          const Text(
                             'ACCOUNT BALANCE',
                             style: TextStyle(
                               fontSize: 12,
@@ -114,11 +116,18 @@ class _BankDetailState extends State<BankDetail> {
                             ),
                           ),
                           SizedBox(width: 8),
-                          Icon(
-                            Icons.remove_red_eye_outlined,
-                            size: 20,
-                            color: Color(0xFF9FABD2),
-                          ),
+                          GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  showTotalBalance = !showTotalBalance;
+                                });
+                              },
+                              child: Icon(
+                                  showTotalBalance == true
+                                      ? Icons.visibility_off
+                                      : Icons.remove_red_eye_outlined,
+                                  color: Colors.grey[400],
+                                  size: 20)),
                         ],
                       ),
                       const SizedBox(
@@ -127,12 +136,27 @@ class _BankDetailState extends State<BankDetail> {
                       Container(
                         width: double.infinity,
                         child: Text(
-                          widget.accountSummaries
-                              .fold(
-                                  0.0,
-                                  (sum, bank) =>
-                                      sum + bank.totalCredit - bank.totalDebit)
-                              .toString(),
+                          showTotalBalance
+                              ? formatNumberWithComma(double.tryParse(widget
+                                      .accountSummaries
+                                      .fold(
+                                          0.0,
+                                          (sum, bank) =>
+                                              sum +
+                                              double.tryParse(bank
+                                                  .balance)!) // Replace with your actual balance calculation logic
+                                      .toString())) +
+                                  " ETB"
+                              : "*" *
+                                  widget.accountSummaries
+                                      .fold(
+                                          0.0,
+                                          (sum, bank) =>
+                                              sum +
+                                              double.tryParse(bank
+                                                  .balance)!) // Replace with your actual balance calculation logic
+                                      .toString()
+                                      .length,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               fontSize: 20,
@@ -148,17 +172,18 @@ class _BankDetailState extends State<BankDetail> {
                                 Text(
                                   "Total Credit",
                                   style: TextStyle(
-                                    color: Colors.grey[500],
+                                    color: Colors.white,
                                     fontSize: 14,
                                   ),
                                 ),
                                 Text(
-                                    widget.accountSummaries
+                                    formatNumberWithComma(double.tryParse(widget
+                                        .accountSummaries
                                         .fold(
                                             0.0,
                                             (sum, bank) =>
                                                 sum + bank.totalCredit)
-                                        .toString(),
+                                        .toString())),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
@@ -175,17 +200,18 @@ class _BankDetailState extends State<BankDetail> {
                                 Text(
                                   "Total Debit",
                                   style: TextStyle(
-                                    color: Colors.grey[500],
+                                    color: Colors.white,
                                     fontSize: 14,
                                   ),
                                 ),
                                 Text(
-                                    widget.accountSummaries
+                                    formatNumberWithComma(double.tryParse(widget
+                                        .accountSummaries
                                         .fold(
                                             0.0,
                                             (sum, bank) =>
                                                 sum + bank.totalDebit)
-                                        .toString(),
+                                        .toString())),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,

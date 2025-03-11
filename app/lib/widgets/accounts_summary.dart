@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:totals/data/consts.dart';
 import 'package:totals/main.dart';
+import 'package:totals/utils/text_utils.dart';
 import 'package:totals/widgets/account_detail.dart';
 
 class AccountsSummaryList extends StatefulWidget {
@@ -122,9 +123,8 @@ class _AccountsSummaryListState extends State<AccountsSummaryList> {
                                         ),
                                       ),
                                       Text(
-                                          (account.totalCredit -
-                                                      account.totalDebit)
-                                                  .toStringAsFixed(2) +
+                                          formatNumberWithComma(double.tryParse(
+                                                  account.balance)) +
                                               " ETB",
                                           style: const TextStyle(
                                             fontSize: 14,
@@ -174,7 +174,7 @@ class _AccountsSummaryListState extends State<AccountsSummaryList> {
                                     Text(
                                       "Total Transactions",
                                       style: TextStyle(
-                                        color: Colors.grey[500],
+                                        color: Color(0xFF181F2A),
                                         fontSize: 13,
                                       ),
                                     ),
@@ -196,14 +196,18 @@ class _AccountsSummaryListState extends State<AccountsSummaryList> {
                                     Text(
                                       "Total Credit",
                                       style: TextStyle(
-                                        color: Colors.grey[500],
+                                        color: Color(0xFF181F2A),
                                         fontSize: 13,
                                       ),
                                     ),
-                                    Text(account.totalCredit.toString(),
+                                    Text(
+                                        formatNumberWithComma(
+                                                account.totalCredit) +
+                                            " ETB",
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
+                                          color: Color(0xFF181F2A),
                                         )),
                                   ],
                                 ),
@@ -215,13 +219,17 @@ class _AccountsSummaryListState extends State<AccountsSummaryList> {
                                     Text(
                                       "Total Debit",
                                       style: TextStyle(
-                                        color: Colors.grey[500],
+                                        color: Color(0xFF181F2A),
                                         fontSize: 13,
                                       ),
                                     ),
-                                    Text(account.totalDebit.toString(),
+                                    Text(
+                                        formatNumberWithComma(
+                                                account.totalDebit) +
+                                            " ETB",
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
+                                          color: Color(0xFF181F2A),
                                           fontSize: 13,
                                         )),
                                   ],
@@ -234,14 +242,17 @@ class _AccountsSummaryListState extends State<AccountsSummaryList> {
                                     Text(
                                       "Pending Credit",
                                       style: TextStyle(
-                                        color: Colors.grey[500],
+                                        color: Color(0xFF181F2A),
                                         fontSize: 13,
                                       ),
                                     ),
-                                    Text(account.pendingCredit.toString(),
+                                    Text(
+                                        account.pendingCredit.toString() +
+                                            " ETB",
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
+                                          color: Color(0xFF181F2A),
                                         )),
                                   ],
                                 ),
@@ -253,14 +264,17 @@ class _AccountsSummaryListState extends State<AccountsSummaryList> {
                                     Text(
                                       "Settled Balance",
                                       style: TextStyle(
-                                        color: Colors.grey[500],
+                                        color: Color(0xFF181F2A),
                                         fontSize: 13,
                                       ),
                                     ),
-                                    Text(account.settledBalance.toString(),
+                                    Text(
+                                        account.settledBalance.toString() +
+                                            " ETB",
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
+                                          color: Color(0xFF181F2A),
                                         )),
                                   ],
                                 ),
@@ -277,14 +291,18 @@ class _AccountsSummaryListState extends State<AccountsSummaryList> {
                                     Text(
                                       "Total Balance",
                                       style: TextStyle(
-                                        color: Colors.grey[500],
+                                        color: Color(0xFF181F2A),
                                         fontSize: 13,
                                       ),
                                     ),
-                                    Text(account.totalCredit.toString(),
+                                    Text(
+                                        formatNumberWithComma(double.tryParse(
+                                                account.balance)) +
+                                            " ETB",
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
+                                          color: Color(0xFF181F2A),
                                         )),
                                   ],
                                 ),

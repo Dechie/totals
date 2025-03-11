@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:totals/data/consts.dart';
 import 'package:totals/utils/sms_utils.dart';
+import 'package:totals/utils/text_utils.dart';
 import 'package:totals/widgets/add_account_form.dart';
 import 'package:totals/widgets/bank_detail.dart';
 import 'package:totals/widgets/banks_summary_list.dart';
@@ -31,7 +32,7 @@ onBackgroundMessage(SmsMessage message) async {
   }
 
   try {
-    if (message.address == "+251943685872") {
+    if (message.address == "CBE") {
       var details = SmsUtils.extractCBETransactionDetails(message.body!);
       SharedPreferences prefs = await SharedPreferences.getInstance();
       var allTransactions = prefs.getStringList("transactions") ?? [];
@@ -180,6 +181,7 @@ class BankSummary {
   final double totalDebit;
   final double settledBalance;
   final double pendingCredit;
+  final double totalBalance;
   final int accountCount;
 
   BankSummary(
@@ -188,6 +190,7 @@ class BankSummary {
       required this.totalCredit,
       required this.totalDebit,
       required this.settledBalance,
+      required this.totalBalance,
       required this.pendingCredit});
 }
 
@@ -200,6 +203,7 @@ class AccountSummary {
   final double totalDebit;
   final double settledBalance;
   final double pendingCredit;
+  String balance;
 
   AccountSummary(
       {required this.bankId,
@@ -209,6 +213,7 @@ class AccountSummary {
       required this.totalCredit,
       required this.totalDebit,
       required this.settledBalance,
+      required this.balance,
       required this.pendingCredit});
 }
 
@@ -217,11 +222,13 @@ class AllSummary {
   final double totalDebit;
   final int banks;
   final int accounts;
+  final double totalBalance;
 
   AllSummary(
       {required this.totalCredit,
       required this.totalDebit,
       required this.banks,
+      required this.totalBalance,
       required this.accounts});
 }
 
@@ -305,7 +312,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     print(message.body);
     print("Received new messages from ${message.address}");
     try {
-      if (message.address == "+251943685872") {
+      if (message.address == "CBE") {
         var details = SmsUtils.extractCBETransactionDetails(message.body!);
         SharedPreferences prefs = await SharedPreferences.getInstance();
         var allTransactions = prefs.getStringList(key) ?? [];
@@ -451,18 +458,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             0.0, (sum, account) => sum + (account['settledBalance'] ?? 0.0));
         double pendingCredit = accounts.fold(
             0.0, (sum, account) => sum + (account['pendingCredit'] ?? 0.0));
+        double totalBalance = accounts.fold(
+            0.0,
+            (sum, account) =>
+                sum + (double.tryParse(account['balance']) ?? 0.0));
+
         int accountCount = accounts.length;
-
-        print("total credit: $totalCredit total debit: $totalDebit");
-
         return BankSummary(
-          bankId: bankId,
-          totalCredit: totalCredit,
-          totalDebit: totalDebit,
-          settledBalance: settledBalance,
-          pendingCredit: pendingCredit,
-          accountCount: accountCount,
-        );
+            bankId: bankId,
+            totalCredit: totalCredit,
+            totalDebit: totalDebit,
+            settledBalance: settledBalance,
+            pendingCredit: pendingCredit,
+            accountCount: accountCount,
+            totalBalance: totalBalance);
       }).toList();
       List<int> bankIds =
           tempBankSummaries.map((e) => e.bankId).toList(); // Get bank names
@@ -505,6 +514,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         return AccountSummary(
           accountNumber: accountData['accountNumber'],
           bankId: accountData['bank'],
+          balance: accountData['balance'],
           accountHolderName: accountData['accountHolderName'],
           totalTransactions: accountTransactions.length.toDouble() ?? 0,
           totalCredit: totalCredit,
@@ -519,11 +529,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         tabs = [0, ...bankIds];
         accountSummaries = tempAccountSummary;
         // total credit is the sum of all transaction amount with the type CREDIT
-        double tempTotalCredit = bankSummaries.fold(
-            0.0, (sum, bank) => sum + bank.totalCredit - bank.totalDebit);
+        double tempTotalCredit =
+            bankSummaries.fold(0.0, (sum, bank) => sum + bank.totalCredit);
+        double tempTotalDebit =
+            bankSummaries.fold(0.0, (sum, bank) => sum + bank.totalDebit);
+
+        double totalBalance =
+            bankSummaries.fold(0.0, (sum, bank) => sum + bank.totalBalance);
         summary = AllSummary(
             totalCredit: tempTotalCredit,
-            totalDebit: 0,
+            totalBalance: totalBalance,
+            totalDebit: tempTotalDebit,
             banks: allAccounts.length,
             accounts: allAccounts.length);
       });
@@ -693,6 +709,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool allSummaryDetailExpanded = false;
+  bool showTotalBalance = false;
+
   @override
   Widget build(BuildContext context) {
     return !_isAuthenticated
@@ -951,11 +969,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                 16.0, 28.0, 16.0, 28.0),
                                             child: Column(
                                               children: [
-                                                const Row(
+                                                Row(
                                                   mainAxisAlignment:
                                                       MainAxisAlignment.center,
                                                   children: [
-                                                    Text(
+                                                    const Text(
                                                       'TOTAL BALANCE',
                                                       style: TextStyle(
                                                         fontSize: 14,
@@ -966,12 +984,23 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                       ),
                                                     ),
                                                     SizedBox(width: 8),
-                                                    Icon(
-                                                      Icons
-                                                          .remove_red_eye_outlined,
-                                                      size: 20,
-                                                      color: Color(0xFF9FABD2),
-                                                    ),
+                                                    GestureDetector(
+                                                        onTap: () {
+                                                          setState(() {
+                                                            showTotalBalance =
+                                                                !showTotalBalance;
+                                                          });
+                                                        },
+                                                        child: Icon(
+                                                            showTotalBalance ==
+                                                                    true
+                                                                ? Icons
+                                                                    .visibility_off
+                                                                : Icons
+                                                                    .remove_red_eye_outlined,
+                                                            color: Colors
+                                                                .grey[400],
+                                                            size: 20)),
                                                     SizedBox(width: 8),
                                                   ],
                                                 ),
@@ -983,8 +1012,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                       MainAxisAlignment.center,
                                                   children: [
                                                     Text(
-                                                      "${summary?.totalCredit ?? 0 - (summary?.totalDebit ?? 0)} ETB",
-                                                      style: TextStyle(
+                                                      "${showTotalBalance ? (formatNumberWithComma(summary?.totalBalance) ?? 0.0) : "*" * (summary?.totalBalance.toString().length ?? 3)} ETB",
+                                                      style: const TextStyle(
                                                           fontSize: 22,
                                                           color: Colors.white,
                                                           fontWeight:
@@ -1037,14 +1066,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                           Text(
                                                             "Total Credit",
                                                             style: TextStyle(
-                                                              color: Colors
-                                                                  .grey[500],
+                                                              color:
+                                                                  Colors.white,
                                                               fontSize: 13,
                                                             ),
                                                           ),
                                                           Text(
-                                                              summary?.totalCredit
-                                                                      .toString() ??
+                                                              formatNumberWithComma(summary
+                                                                              ?.totalCredit)
+                                                                          .toString() +
+                                                                      " ETB" ??
                                                                   "",
                                                               style: const TextStyle(
                                                                   fontWeight:
@@ -1063,14 +1094,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                           Text(
                                                             "Total Debit",
                                                             style: TextStyle(
-                                                              color: Colors
-                                                                  .grey[500],
+                                                              color:
+                                                                  Colors.white,
                                                               fontSize: 13,
                                                             ),
                                                           ),
                                                           Text(
-                                                              summary?.totalDebit
-                                                                      .toString() ??
+                                                              formatNumberWithComma(summary
+                                                                              ?.totalDebit)
+                                                                          .toString() +
+                                                                      " ETB" ??
                                                                   "",
                                                               style: const TextStyle(
                                                                   fontWeight:
@@ -1129,28 +1162,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         }
       },
       child: Icon(_isAuthenticated ? Icons.lock : Icons.lock_open),
-    );
-  }
-}
-
-class LockScreen extends StatelessWidget {
-  const LockScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(child: Text("App Locked. Please authenticate.")),
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(child: Text("Welcome to the app!")),
     );
   }
 }

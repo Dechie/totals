@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'dart:ffi';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:totals/data/consts.dart';
+import 'package:totals/utils/text_utils.dart';
 
 class Account {
   final String accountNumber;
@@ -54,6 +56,7 @@ class _AccountDetailPageState extends State<AccountDetailPage> {
   String activeTab = "All Transactions";
   List<Transaction> transactions = [];
   List<Transaction> visibleTransaction = [];
+  bool showTotalBalance = false;
 
   Account? account;
   bool isExpanded = false;
@@ -334,27 +337,32 @@ class _AccountDetailPageState extends State<AccountDetailPage> {
                                                       CrossAxisAlignment.center,
                                                   children: [
                                                     Text(
-                                                      "${account?.balance.toString()} ETB" ??
+                                                      "${showTotalBalance ? formatNumberWithComma(account?.balance) : '*' * account!.balance.toString().length} ETB" ??
                                                           "0 ETB",
                                                       style: const TextStyle(
                                                         fontSize: 14,
                                                         color:
                                                             Color(0xFFF7F8FB),
-                                                        // Subtle text color
                                                       ),
                                                     ),
                                                     const SizedBox(width: 8),
                                                     GestureDetector(
                                                         onTap: () {
-                                                          setState(() {});
+                                                          setState(() {
+                                                            showTotalBalance =
+                                                                !showTotalBalance;
+                                                          });
                                                         },
                                                         child: Icon(
-                                                            Icons
-                                                                .remove_red_eye_outlined,
+                                                            showTotalBalance ==
+                                                                    true
+                                                                ? Icons
+                                                                    .visibility_off
+                                                                : Icons
+                                                                    .remove_red_eye_outlined,
                                                             color: Colors
                                                                 .grey[400],
-                                                            size:
-                                                                20)) // Add spacing between icon and text
+                                                            size: 20))
                                                   ],
                                                 ),
                                               ],
@@ -374,13 +382,12 @@ class _AccountDetailPageState extends State<AccountDetailPage> {
                                                   Text(
                                                     "Total Credit",
                                                     style: TextStyle(
-                                                      color: Colors.grey[500],
+                                                      color: Colors.white,
                                                       fontSize: 14,
                                                     ),
                                                   ),
                                                   Text(
-                                                      account?.totalCredit
-                                                              .toString() ??
+                                                      "${account?.totalCredit.toString()} ETB" ??
                                                           '',
                                                       style: const TextStyle(
                                                         fontWeight:
@@ -394,16 +401,15 @@ class _AccountDetailPageState extends State<AccountDetailPage> {
                                                 mainAxisAlignment: MainAxisAlignment
                                                     .spaceBetween, // Centers horizontally
                                                 children: [
-                                                  Text(
+                                                  const Text(
                                                     "Total Debit",
                                                     style: TextStyle(
-                                                      color: Colors.grey[500],
+                                                      color: Colors.white,
                                                       fontSize: 14,
                                                     ),
                                                   ),
                                                   Text(
-                                                      account?.totalDebit
-                                                              .toString() ??
+                                                      "${account?.totalDebit.toString()} ETB" ??
                                                           '',
                                                       style: const TextStyle(
                                                         fontWeight:
@@ -481,14 +487,15 @@ class _AccountDetailPageState extends State<AccountDetailPage> {
                                             style: TextStyle(
                                                 fontWeight: FontWeight.w600),
                                           ),
-                                          Text('${transaction.time.toLocal()}'),
+                                          Text(
+                                              '${formatTime(transaction.time.toString())}'),
                                           Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
                                               Text('${transaction.reference}'),
                                               Text(
-                                                '${transaction.type == 'CREDIT' ? "+" : "-"} ${transaction.amount.toStringAsFixed(2)} ETB',
+                                                '${transaction.type == 'CREDIT' ? "+" : "-"} ${formatNumberWithComma(transaction.amount)} ETB',
                                                 style: TextStyle(
                                                     fontWeight: FontWeight.w500,
                                                     color: transaction.type ==

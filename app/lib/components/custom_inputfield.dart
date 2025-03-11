@@ -19,6 +19,7 @@ class CustomTextField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      autofocus: true,
       decoration: InputDecoration(
         labelText: labelText,
         contentPadding: const EdgeInsets.symmetric(
