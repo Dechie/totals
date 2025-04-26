@@ -16,6 +16,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:intl/intl.dart';
+import 'package:totals/components/summary/summary_content.dart';
 import 'package:totals/data/consts.dart';
 import 'package:totals/utils/sms_utils.dart';
 import 'package:totals/utils/text_utils.dart';
@@ -32,7 +33,7 @@ onBackgroundMessage(SmsMessage message) async {
   }
 
   try {
-    if (message.address == "CBE") {
+    if (message.address == "+251943685872") {
       var details = SmsUtils.extractCBETransactionDetails(message.body!);
       SharedPreferences prefs = await SharedPreferences.getInstance();
       var allTransactions = prefs.getStringList("transactions") ?? [];
@@ -312,7 +313,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     print(message.body);
     print("Received new messages from ${message.address}");
     try {
-      if (message.address == "CBE") {
+      if (message.address == "+251943685872") {
         var details = SmsUtils.extractCBETransactionDetails(message.body!);
         SharedPreferences prefs = await SharedPreferences.getInstance();
         var allTransactions = prefs.getStringList(key) ?? [];
@@ -935,6 +936,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     ? Expanded(
                         child: Column(
                         children: [
+                          SummaryContent(),
                           GestureDetector(
                               onTap: () {
                                 setState(() {
