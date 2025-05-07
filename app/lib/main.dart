@@ -21,6 +21,7 @@ import 'package:totals/data/consts.dart';
 import 'package:totals/utils/sms_utils.dart';
 import 'package:totals/utils/text_utils.dart';
 import 'package:totals/widgets/add_account_form.dart';
+import 'package:totals/widgets/auth_page.dart';
 import 'package:totals/widgets/bank_detail.dart';
 import 'package:totals/widgets/banks_summary_list.dart';
 import 'package:totals/auth-service.dart';
@@ -309,6 +310,26 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> authenticateUser() async {
+    if (!_isAuthenticated) {
+      final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
+      if (canAuthenticateWithBiometrics) {
+        try {
+          final bool didAuthenticate = await _auth.authenticate(
+              localizedReason: 'Please authenticate to show account details',
+              options: const AuthenticationOptions(biometricOnly: false));
+          setState(() {
+            _isAuthenticated = didAuthenticate;
+          });
+        } catch (e) {
+          print(e);
+        }
+      }
+    } else {
+      _isAuthenticated = false;
+    }
+  }
+
   onMessage(SmsMessage message) async {
     print(message.body);
     print("Received new messages from ${message.address}");
@@ -403,7 +424,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         print("Scrolled past 100");
       }
     });
-    // _authenticate();
     WidgetsBinding.instance.addObserver(this); // Add observer
     startServer();
     getItems();
@@ -427,13 +447,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       getItems();
       syncData();
     }
-  }
-
-  Future<void> _authenticate() async {
-    bool authenticated = await AuthService().authenticate();
-    setState(() {
-      _isAuthenticated = authenticated;
-    });
   }
 
   void getItems({String searchKey = ""}) async {
@@ -740,72 +753,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return !_isAuthenticated
-        ? Scaffold(
-            body: Stack(
-              children: [
-                Center(
-                  child: Image.asset(
-                    'assets/images/bg.png',
-                    fit: BoxFit.cover,
-                    width: MediaQuery.of(context).size.width,
-                    height: MediaQuery.of(context).size.height,
-                  ),
-                ),
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Center(
-                        child: Image.asset(
-                          'assets/images/logo-text-white.png',
-                          fit: BoxFit.cover,
-                          width: 250,
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Text(
-                        'HOME FOR ALL YOUR ACCOUNTS',
-                        style: TextStyle(
-                          fontSize: 14,
-                          // fontWeight: FontWeight.bold,
-                          color: Colors.grey[300],
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      FloatingActionButton(
-                        onPressed: () async {
-                          if (!_isAuthenticated) {
-                            final bool canAuthenticateWithBiometrics =
-                                await _auth.canCheckBiometrics;
-                            if (canAuthenticateWithBiometrics) {
-                              try {
-                                final bool didAuthenticate =
-                                    await _auth.authenticate(
-                                        localizedReason:
-                                            'Please authenticate to show account details',
-                                        options: const AuthenticationOptions(
-                                            biometricOnly: false));
-                                setState(() {
-                                  _isAuthenticated = didAuthenticate;
-                                });
-                              } catch (e) {
-                                print(e);
-                              }
-                            }
-                          } else {
-                            _isAuthenticated = false;
-                          }
-                        },
-                        child: Icon(
-                            _isAuthenticated ? Icons.lock : Icons.lock_open),
-                      )
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            // floatingActionButton: _authButton(),
-          )
+        ? AuthPage(onAuthenticate: authenticateUser)
         : Scaffold(
             backgroundColor: const Color(0xffF1F4FF),
             floatingActionButton: SizedBox(
@@ -866,14 +814,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             width: 100,
                           ),
                         ),
-                        // Center(
-                        //   child: SvgPicture.asset(
-                        //     'assets/images/logo.svg',
-                        //     semanticsLabel: 'My SVG Image',
-                        //     height: 100,
-                        //     width: 70,
-                        //   ),
-                        // ),
                       ],
                     ),
                     Row(
