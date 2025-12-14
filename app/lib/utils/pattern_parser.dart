@@ -7,8 +7,25 @@ class PatternParser {
       String messageBody, String senderAddress, List<SmsPattern> patterns) {
     String cleanBody = messageBody.trim();
 
+    patterns.add(SmsPattern(
+      bankId: 4,
+      senderId: "BOA",
+      regex:
+          r'account\s+(?<account>[\d\*]+)\s+was\s+debited\s+with\s+ETB\s+(?<amount>[\d,.]+)\s*\.\s*Available\s+Balance:\s*ETB\s+(?<balance>[\d,.]+)\s*\.\s*Receipt:\s*https?:\/\/\S+\?trx=(?<reference>FT[A-Z0-9]+)',
+      type: "DEBIT",
+      description: "BOA Debit with Account",
+    ));
+    patterns.add(SmsPattern(
+      bankId: 4,
+      senderId: "BOA",
+      regex:
+          r'account\s+(?<account>[\d\*]+).*?credited\s+with\s+ETB\s+(?<amount>[\d,.]+)\s+by\s+(?<source>.+?)\s+Available\s+Balance:\s+ETB\s+(?<balance>[\d,.]+).*?Receipt:\s*https?:\/\/\S+\?trx=(?<reference>FT[A-Z0-9]+)',
+      type: "CREDIT",
+      description: "BOA Credit with Account",
+    ));
+
     for (var pattern in patterns) {
-      print("debug: Pattern Regex: ${pattern.regex}");
+      print("debug: Pattern Regex: ${[pattern.bankId]} ${pattern.regex}");
 
       // 2. Try to match regex
       try {
