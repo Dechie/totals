@@ -13,6 +13,7 @@ import 'package:totals/widgets/total_balance_card.dart';
 import 'package:totals/widgets/debug_sms_dialog.dart';
 import 'package:totals/widgets/debug_transactions_dialog.dart';
 import 'package:totals/widgets/failed_parse_dialog.dart';
+import 'package:totals/widgets/clear_database_dialog.dart';
 import 'package:totals/services/sms_config_service.dart';
 import 'package:totals/widgets/custom_bottom_nav.dart';
 import 'package:totals/screens/analytics_page.dart';
@@ -578,6 +579,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                           height: 40,
                                           padding: const EdgeInsets.all(8),
                                           child: Icon(Icons.error_outline,
+                                              color: Theme.of(context)
+                                                  .iconTheme
+                                                  .color,
+                                              size: 20),
+                                        ),
+                                      ),
+                                    ),
+                                    InkWell(
+                                      onTap: () =>
+                                          showClearDatabaseDialog(context),
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Tooltip(
+                                        message: "Clear Database",
+                                        child: Container(
+                                          width: 40,
+                                          height: 40,
+                                          padding: const EdgeInsets.all(8),
+                                          child: Icon(Icons.delete_outline,
                                               color: Theme.of(context)
                                                   .iconTheme
                                                   .color,

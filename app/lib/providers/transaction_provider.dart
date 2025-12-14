@@ -147,7 +147,7 @@ class TransactionProvider with ChangeNotifier {
           return t.accountNumber?.substring(t.accountNumber!.length - 2) ==
               account.accountNumber.substring(account.accountNumber.length - 2);
         } else {
-          return t.accountNumber == account.accountNumber;
+          return t.bankId == account.bank;
         }
       }).toList();
 
