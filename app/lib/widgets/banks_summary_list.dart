@@ -9,9 +9,13 @@ import 'package:totals/utils/gradients.dart';
 class BanksSummaryList extends StatefulWidget {
   final List<BankSummary> banks;
   List<String> visibleTotalBalancesForSubCards;
+  final VoidCallback onAddAccount;
 
-  BanksSummaryList(
-      {required this.banks, required this.visibleTotalBalancesForSubCards});
+  BanksSummaryList({
+    required this.banks,
+    required this.visibleTotalBalancesForSubCards,
+    required this.onAddAccount,
+  });
 
   @override
   State<BanksSummaryList> createState() => _BanksSummaryListState();
@@ -30,8 +34,79 @@ class _BanksSummaryListState extends State<BanksSummaryList> {
             mainAxisSpacing: 12,
             childAspectRatio: 0.85,
           ),
-          itemCount: widget.banks.length,
+          itemCount: widget.banks.length + 1,
           itemBuilder: (context, index) {
+            // Show add account button as the last item
+            if (index == widget.banks.length) {
+              return GestureDetector(
+                onTap: widget.onAddAccount,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      width: 2,
+                      style: BorderStyle.solid,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      )
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: widget.onAddAccount,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.add_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 32,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              "Add Account",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "Register new bank",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }
+            
             final bank = widget.banks[index];
             final isSyncing =
                 syncStatusService.hasAnyAccountSyncing(bank.bankId);

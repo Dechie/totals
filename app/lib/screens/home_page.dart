@@ -185,42 +185,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          floatingActionButton: SizedBox(
-            width: 65,
-            height: 65,
-            child: FloatingActionButton(
-              onPressed: () {
-                showModalBottomSheet(
-                  isScrollControlled: true,
-                  context: context,
-                  builder: (context) {
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 20, horizontal: 20),
-                        height: MediaQuery.of(context).size.height * 0.83,
-                        child: SingleChildScrollView(
-                          child: RegisterAccountForm(
-                            onSubmit: () {
-                              provider.loadData();
-                            },
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-              backgroundColor: const Color(0xFF294EC3),
-              shape: const CircleBorder(),
-              child: const Icon(
-                Icons.add,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
-          ),
           appBar: AppBar(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               toolbarHeight: 70,
@@ -417,31 +381,99 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                           Icons
                                                               .account_balance_outlined,
                                                           size: 64,
-                                                          color:
-                                                              Colors.grey[400],
+                                                          color: Theme.of(context)
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
                                                         ),
                                                         const SizedBox(
-                                                            height: 16),
+                                                            height: 24),
                                                         Text(
                                                           "No Bank Accounts Yet",
                                                           style: TextStyle(
-                                                            fontSize: 18,
+                                                            fontSize: 20,
                                                             fontWeight:
                                                                 FontWeight.bold,
-                                                            color: Colors
-                                                                .grey[700],
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .onSurface,
                                                           ),
                                                         ),
                                                         const SizedBox(
                                                             height: 8),
                                                         Text(
-                                                          "Tap the + icon to add a new account.",
+                                                          "Get started by adding your first bank account",
                                                           textAlign:
                                                               TextAlign.center,
                                                           style: TextStyle(
                                                             fontSize: 14,
-                                                            color: Colors
-                                                                .grey[600],
+                                                            color: Theme.of(context)
+                                                                .colorScheme
+                                                                .onSurfaceVariant,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 32),
+                                                        SizedBox(
+                                                          width: 200,
+                                                          child: GestureDetector(
+                                                            onTap: () {
+                                                              showModalBottomSheet(
+                                                                isScrollControlled: true,
+                                                                context: context,
+                                                                builder: (context) {
+                                                                  return ClipRRect(
+                                                                    borderRadius: BorderRadius.circular(15),
+                                                                    child: Container(
+                                                                      padding: const EdgeInsets.symmetric(
+                                                                          vertical: 20, horizontal: 20),
+                                                                      height: MediaQuery.of(context).size.height * 0.83,
+                                                                      child: SingleChildScrollView(
+                                                                        child: RegisterAccountForm(
+                                                                          onSubmit: () {
+                                                                            provider.loadData();
+                                                                          },
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  );
+                                                                },
+                                                              );
+                                                            },
+                                                            child: Container(
+                                                              padding: const EdgeInsets.symmetric(
+                                                                  vertical: 16, horizontal: 24),
+                                                              decoration: BoxDecoration(
+                                                                borderRadius: BorderRadius.circular(16),
+                                                                color: Theme.of(context).colorScheme.primary,
+                                                                boxShadow: [
+                                                                  BoxShadow(
+                                                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                                                    blurRadius: 12,
+                                                                    offset: const Offset(0, 4),
+                                                                  )
+                                                                ],
+                                                              ),
+                                                              child: Row(
+                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                mainAxisSize: MainAxisSize.min,
+                                                                children: [
+                                                                  Icon(
+                                                                    Icons.add_rounded,
+                                                                    color: Colors.white,
+                                                                    size: 24,
+                                                                  ),
+                                                                  const SizedBox(width: 8),
+                                                                  Text(
+                                                                    "Add Account",
+                                                                    style: TextStyle(
+                                                                      fontSize: 16,
+                                                                      fontWeight: FontWeight.w600,
+                                                                      color: Colors.white,
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
                                                           ),
                                                         ),
                                                       ],
@@ -454,7 +486,30 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                     banks:
                                                         provider.bankSummaries,
                                                     visibleTotalBalancesForSubCards:
-                                                        visibleTotalBalancesForSubCards),
+                                                        visibleTotalBalancesForSubCards,
+                                                    onAddAccount: () {
+                                                      showModalBottomSheet(
+                                                        isScrollControlled: true,
+                                                        context: context,
+                                                        builder: (context) {
+                                                          return ClipRRect(
+                                                            borderRadius: BorderRadius.circular(15),
+                                                            child: Container(
+                                                              padding: const EdgeInsets.symmetric(
+                                                                  vertical: 20, horizontal: 20),
+                                                              height: MediaQuery.of(context).size.height * 0.83,
+                                                              child: SingleChildScrollView(
+                                                                child: RegisterAccountForm(
+                                                                  onSubmit: () {
+                                                                    provider.loadData();
+                                                                  },
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          );
+                                                        },
+                                                      );
+                                                    }),
                                               )
                                       ],
                                     ))
