@@ -223,78 +223,106 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           ),
           appBar: AppBar(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              toolbarHeight: 60,
+              toolbarHeight: 70,
               scrolledUnderElevation: 0,
               elevation: 0,
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        child: Image.asset(
-                          "assets/images/logo-text.png",
-                          fit: BoxFit.cover,
-                          width: 100,
-                        ),
-                      ),
-                    ],
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(
+                      "assets/images/logo-text.png",
+                      fit: BoxFit.cover,
+                      width: 110,
+                      height: 32,
+                    ),
                   ),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(
-                        icon: Icon(Icons.list_alt,
-                            color: Theme.of(context).iconTheme.color, size: 25),
-                        onPressed: () => showDebugTransactionsDialog(context),
+                      // Debug buttons grouped in a container
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.list_alt,
+                                  color: Theme.of(context).iconTheme.color, size: 22),
+                              onPressed: () => showDebugTransactionsDialog(context),
+                              padding: const EdgeInsets.all(8),
+                              constraints: const BoxConstraints(),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.message_outlined,
+                                  color: Theme.of(context).iconTheme.color, size: 22),
+                              onPressed: () => showDebugSmsDialog(context),
+                              padding: const EdgeInsets.all(8),
+                              constraints: const BoxConstraints(),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.error_outline,
+                                  color: Theme.of(context).iconTheme.color, size: 22),
+                              onPressed: () => showFailedParseDialog(context),
+                              tooltip: "View Failed Parsings",
+                              padding: const EdgeInsets.all(8),
+                              constraints: const BoxConstraints(),
+                            ),
+                          ],
+                        ),
                       ),
-                      IconButton(
-                        icon: Icon(Icons.delete_outline,
-                            color: Theme.of(context).iconTheme.color, size: 25),
-                        onPressed: () => showClearDatabaseDialog(context),
-                        tooltip: "Clear Database",
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.message_outlined,
-                            color: Theme.of(context).iconTheme.color, size: 25),
-                        onPressed: () => showDebugSmsDialog(context),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.error_outline,
-                            color: Theme.of(context).iconTheme.color, size: 25),
-                        onPressed: () => showFailedParseDialog(context),
-                        tooltip: "View Failed Parsings",
-                      ),
+                      const SizedBox(width: 8),
+                      // Theme switcher - icon only
                       Consumer<ThemeProvider>(
                         builder: (context, themeProvider, child) {
-                          return IconButton(
-                            icon: Icon(
-                              themeProvider.themeMode == ThemeMode.dark
-                                  ? Icons.light_mode
-                                  : Icons.dark_mode,
-                              color: Theme.of(context).iconTheme.color,
-                              size: 25,
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            onPressed: () {
-                              themeProvider.toggleTheme();
-                            },
-                            tooltip: themeProvider.themeMode == ThemeMode.dark
-                                ? "Switch to Light Mode"
-                                : "Switch to Dark Mode",
+                            child: IconButton(
+                              icon: Icon(
+                                themeProvider.themeMode == ThemeMode.dark
+                                    ? Icons.light_mode_rounded
+                                    : Icons.dark_mode_rounded,
+                                color: Theme.of(context).iconTheme.color,
+                                size: 22,
+                              ),
+                              onPressed: () {
+                                themeProvider.toggleTheme();
+                              },
+                              tooltip: themeProvider.themeMode == ThemeMode.dark
+                                  ? "Switch to Light Mode"
+                                  : "Switch to Dark Mode",
+                              padding: const EdgeInsets.all(8),
+                              constraints: const BoxConstraints(),
+                            ),
                           );
                         },
                       ),
-                      IconButton(
-                        icon: Icon(Icons.lock_outline,
-                            color: Theme.of(context).iconTheme.color, size: 25),
-                        onPressed: () {
-                          setState(() {
-                            _isAuthenticated = false;
-                          });
-                        },
+                      const SizedBox(width: 8),
+                      // Lock button
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          icon: Icon(Icons.lock_outline,
+                              color: Theme.of(context).iconTheme.color, size: 22),
+                          onPressed: () {
+                            setState(() {
+                              _isAuthenticated = false;
+                            });
+                          },
+                          padding: const EdgeInsets.all(8),
+                          constraints: const BoxConstraints(),
+                        ),
                       ),
                     ],
                   ),

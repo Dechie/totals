@@ -247,16 +247,30 @@ class _AccountsSummaryListState extends State<AccountsSummaryList> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () {
-                                _showDeleteConfirmation(context, account);
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.red[300],
-                                  size: 20,
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: Colors.red.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(10),
+                                  onTap: () {
+                                    _showDeleteConfirmation(context, account);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(10.0),
+                                    child: Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: Colors.red[400],
+                                      size: 20,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),

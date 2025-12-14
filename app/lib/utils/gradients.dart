@@ -6,7 +6,7 @@ class GradientUtils {
     2: [Color(0xFFd97706), Color(0xFF1a3a5c)], // Awash: Orange / Blue
     3: [Color(0xFFd9b90b), Color(0xFF382e0c)], // Boa: Dark Yellow
     4: [Color(0xFF1a2d5c), Color(0xFF344e7b)], // Dashen: Dark Blue
-    6: [Color(0xFF0a7b44), Color(0xFF202522)], // Telebirr: Green
+    6: [Color.fromARGB(255, 29, 56, 229), Color.fromARGB(255, 144, 213, 238)], // Telebirr: White to Light Green
     99: [
       Color(0xFF2563EB),
       Color(0xFF1E3A8A)
