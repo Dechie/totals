@@ -11,6 +11,8 @@ class TotalBalanceCard extends StatefulWidget {
   final String? subtitle;
   final int gradientId;
   final String logoAsset;
+  final String? address;
+  final String? accountNumber;
 
   const TotalBalanceCard({
     super.key,
@@ -21,6 +23,8 @@ class TotalBalanceCard extends StatefulWidget {
     this.subtitle,
     this.gradientId = 99,
     this.logoAsset = 'assets/images/logo.svg',
+    this.address,
+    this.accountNumber,
   });
 
   @override
@@ -29,6 +33,18 @@ class TotalBalanceCard extends StatefulWidget {
 
 class _TotalBalanceCardState extends State<TotalBalanceCard> {
   bool isExpanded = false;
+
+  String _formatCardNumber(String accountNumber) {
+    final cleaned = accountNumber.replaceAll(RegExp(r'\s'), '');
+    final buffer = StringBuffer();
+    for (int i = 0; i < cleaned.length; i++) {
+      if (i > 0 && i % 4 == 0) {
+        buffer.write('  ');
+      }
+      buffer.write(cleaned[i]);
+    }
+    return buffer.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -128,59 +144,125 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
 
                         const SizedBox(height: 20),
 
-                        // Chip
-                        Container(
-                          width: 44,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: Colors.yellow[200]!.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(
-                                color: Colors.yellow[200]!.withOpacity(0.3)),
-                          ),
-                          child: Stack(
+                        // Chip and Account Number Row
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Golden Chip
+                            Container(
+                              width: 44,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.amber.shade300,
+                                    Colors.amber.shade500,
+                                    Colors.amber.shade600,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                    color:
+                                        Colors.amber.shade700.withOpacity(0.3)),
+                              ),
+                              child: Stack(
+                                children: [
+                                  Positioned(
+                                    top: 0,
+                                    bottom: 0,
+                                    left: 14,
+                                    child: Container(
+                                        width: 1,
+                                        color: Colors.amber.shade800
+                                            .withOpacity(0.4)),
+                                  ),
+                                  Positioned(
+                                    top: 0,
+                                    bottom: 0,
+                                    right: 14,
+                                    child: Container(
+                                        width: 1,
+                                        color: Colors.amber.shade800
+                                            .withOpacity(0.4)),
+                                  ),
+                                  Positioned(
+                                    left: 0,
+                                    right: 0,
+                                    top: 10,
+                                    child: Container(
+                                        height: 1,
+                                        color: Colors.amber.shade800
+                                            .withOpacity(0.4)),
+                                  ),
+                                  Positioned(
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 10,
+                                    child: Container(
+                                        height: 1,
+                                        color: Colors.amber.shade800
+                                            .withOpacity(0.4)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Account Number (if provided)
+                            if (widget.accountNumber != null &&
+                                widget.accountNumber!.isNotEmpty) ...[
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    _formatCardNumber(widget.accountNumber!),
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 1.5,
+                                      fontFamily: 'monospace',
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+
+                        // Address (if provided)
+                        if (widget.address != null &&
+                            widget.address!.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Row(
                             children: [
-                              Positioned(
-                                top: 0,
-                                bottom: 0,
-                                left: 14,
-                                child: Container(
-                                    width: 1,
-                                    color:
-                                        Colors.yellow[500]!.withOpacity(0.1)),
+                              Icon(
+                                Icons.location_on_outlined,
+                                size: 14,
+                                color: Colors.white.withOpacity(0.5),
                               ),
-                              Positioned(
-                                top: 0,
-                                bottom: 0,
-                                right: 14,
-                                child: Container(
-                                    width: 1,
-                                    color:
-                                        Colors.yellow[500]!.withOpacity(0.1)),
-                              ),
-                              Positioned(
-                                left: 0,
-                                right: 0,
-                                top: 10,
-                                child: Container(
-                                    height: 1,
-                                    color:
-                                        Colors.yellow[500]!.withOpacity(0.1)),
-                              ),
-                              Positioned(
-                                left: 0,
-                                right: 0,
-                                bottom: 10,
-                                child: Container(
-                                    height: 1,
-                                    color:
-                                        Colors.yellow[500]!.withOpacity(0.1)),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  widget.address!,
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                           ),
-                        ),
+                        ],
 
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
 
                         // Balance Row
                         Row(

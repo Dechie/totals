@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:totals/models/transaction.dart';
 import 'package:intl/intl.dart';
 
-class TransactionsList extends StatelessWidget {
+class TransactionsList extends StatefulWidget {
   final List<Transaction> transactions;
   final String sortBy;
   final ValueChanged<String> onSortChanged;
@@ -14,15 +14,34 @@ class TransactionsList extends StatelessWidget {
     required this.onSortChanged,
   });
 
+  @override
+  State<TransactionsList> createState() => _TransactionsListState();
+}
+
+class _TransactionsListState extends State<TransactionsList> {
+  static const int _itemsPerPage = 10;
+  int _currentPage = 0;
+
   String _formatCurrency(double amount) {
     return NumberFormat('#,##0.00').format(amount);
   }
 
   @override
+  void didUpdateWidget(TransactionsList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reset to first page when transactions change
+    if (oldWidget.transactions.length != widget.transactions.length) {
+      setState(() {
+        _currentPage = 0;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final sortedTransactions = List<Transaction>.from(transactions);
+    final sortedTransactions = List<Transaction>.from(widget.transactions);
     sortedTransactions.sort((a, b) {
-      switch (sortBy) {
+      switch (widget.sortBy) {
         case 'Amount':
           return b.amount.compareTo(a.amount);
         case 'Reference':
@@ -57,19 +76,48 @@ class TransactionsList extends StatelessWidget {
       );
     }
 
+    final totalPages = (sortedTransactions.length / _itemsPerPage).ceil();
+    final startIndex = _currentPage * _itemsPerPage;
+    final endIndex =
+        (startIndex + _itemsPerPage).clamp(0, sortedTransactions.length);
+    final paginatedTransactions =
+        sortedTransactions.sublist(startIndex, endIndex);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Transactions',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+            Row(
+              children: [
+                Text(
+                  'Transactions',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${sortedTransactions.length}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+              ],
             ),
             PopupMenuButton<String>(
               icon: Row(
@@ -90,7 +138,7 @@ class TransactionsList extends StatelessWidget {
                   ),
                 ],
               ),
-              onSelected: onSortChanged,
+              onSelected: widget.onSortChanged,
               itemBuilder: (context) => [
                 const PopupMenuItem(
                   value: 'Date',
@@ -109,16 +157,191 @@ class TransactionsList extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
+
+        // Transactions list
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: sortedTransactions.length,
+          itemCount: paginatedTransactions.length,
           itemBuilder: (context, index) {
-            final transaction = sortedTransactions[index];
-            return _TransactionItem(transaction: transaction, formatCurrency: _formatCurrency);
+            final transaction = paginatedTransactions[index];
+            return _TransactionItem(
+                transaction: transaction, formatCurrency: _formatCurrency);
           },
         ),
+
+        // Pagination controls
+        if (totalPages > 1) ...[
+          // const SizedBox(height: 8),
+          _buildPaginationControls(totalPages),
+        ],
+
+        const SizedBox(height: 80), // Space for bottom nav
       ],
+    );
+  }
+
+  Widget _buildPaginationControls(int totalPages) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Previous button
+          _PaginationButton(
+            icon: Icons.chevron_left,
+            onTap:
+                _currentPage > 0 ? () => setState(() => _currentPage--) : null,
+            isEnabled: _currentPage > 0,
+          ),
+
+          const SizedBox(width: 8),
+
+          // Page numbers
+          ..._buildPageNumbers(totalPages),
+
+          const SizedBox(width: 8),
+
+          // Next button
+          _PaginationButton(
+            icon: Icons.chevron_right,
+            onTap: _currentPage < totalPages - 1
+                ? () => setState(() => _currentPage++)
+                : null,
+            isEnabled: _currentPage < totalPages - 1,
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildPageNumbers(int totalPages) {
+    List<Widget> pageWidgets = [];
+
+    // Determine which page numbers to show
+    List<int> pagesToShow = [];
+
+    if (totalPages <= 5) {
+      // Show all pages if 5 or fewer
+      pagesToShow = List.generate(totalPages, (i) => i);
+    } else {
+      // Always show first page
+      pagesToShow.add(0);
+
+      // Show pages around current page
+      if (_currentPage > 2) {
+        pagesToShow.add(-1); // Ellipsis indicator
+      }
+
+      for (int i = _currentPage - 1; i <= _currentPage + 1; i++) {
+        if (i > 0 && i < totalPages - 1) {
+          pagesToShow.add(i);
+        }
+      }
+
+      if (_currentPage < totalPages - 3) {
+        pagesToShow.add(-1); // Ellipsis indicator
+      }
+
+      // Always show last page
+      pagesToShow.add(totalPages - 1);
+    }
+
+    for (int i = 0; i < pagesToShow.length; i++) {
+      final pageNum = pagesToShow[i];
+
+      if (pageNum == -1) {
+        // Ellipsis
+        pageWidgets.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              '...',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        );
+      } else {
+        pageWidgets.add(
+          GestureDetector(
+            onTap: () => setState(() => _currentPage = pageNum),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: _currentPage == pageNum
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context)
+                        .colorScheme
+                        .surfaceVariant
+                        .withOpacity(0.5),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Text(
+                  '${pageNum + 1}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: _currentPage == pageNum
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    return pageWidgets;
+  }
+}
+
+class _PaginationButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+  final bool isEnabled;
+
+  const _PaginationButton({
+    required this.icon,
+    required this.onTap,
+    required this.isEnabled,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: isEnabled
+              ? Theme.of(context).colorScheme.surface
+              : Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isEnabled
+                ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
+                : Theme.of(context).colorScheme.outline.withOpacity(0.1),
+          ),
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: isEnabled
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
+        ),
+      ),
     );
   }
 }
@@ -147,9 +370,8 @@ class _TransactionItem extends StatelessWidget {
     final dateStr = dateTime != null
         ? DateFormat('MMM dd, yyyy').format(dateTime)
         : 'Unknown date';
-    final timeStr = dateTime != null
-        ? DateFormat('hh:mm a').format(dateTime)
-        : '';
+    final timeStr =
+        dateTime != null ? DateFormat('hh:mm a').format(dateTime) : '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -158,7 +380,8 @@ class _TransactionItem extends StatelessWidget {
         color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.1),
+          color:
+              Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.1),
           width: 1,
         ),
       ),
@@ -182,7 +405,8 @@ class _TransactionItem extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (transaction.creditor != null || transaction.receiver != null)
+                    if (transaction.creditor != null ||
+                        transaction.receiver != null)
                       const SizedBox(height: 4),
                     if (transaction.creditor != null)
                       Text(
@@ -234,7 +458,10 @@ class _TransactionItem extends StatelessWidget {
                         timeStr,
                         style: TextStyle(
                           fontSize: 11,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurfaceVariant
+                              .withOpacity(0.7),
                         ),
                       ),
                   ],
@@ -247,4 +474,3 @@ class _TransactionItem extends StatelessWidget {
     );
   }
 }
-
