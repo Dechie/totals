@@ -30,7 +30,6 @@ class AppConstants {
       name: "Awash Bank",
       shortName: "Awash",
       codes: [
-        "Awash",
         "Awash Bank",
       ],
       image: "assets/images/awash.png",
@@ -49,8 +48,8 @@ class AppConstants {
       name: "Dashen Bank",
       shortName: "Dashen",
       codes: [
-        "Dashen",
-        "Dashen Bank",
+        "DashenBank",
+        // "Dashen Bank",
       ],
       image: "assets/images/dashen.png",
     ),
