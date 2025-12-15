@@ -302,7 +302,7 @@ Contributions are welcome! Please:
 
 ## License
 
-[Specify your license here]
+[Under MIT License](LICENSE.md)
 
 ## Support
 
