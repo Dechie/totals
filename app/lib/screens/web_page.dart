@@ -158,6 +158,16 @@ class _WebPageState extends State<WebPage> {
     }
   }
 
+  Future<void> _openDocs() async {
+    if (_serverService.serverUrl != null) {
+      final docsUrl = '${_serverService.serverUrl}/docs';
+      final uri = Uri.parse(docsUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return _isNerdMode ? _buildConsoleMode() : _buildSimpleMode();
@@ -452,6 +462,152 @@ class _WebPageState extends State<WebPage> {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+
+                  // Docs endpoint info - Enhanced card
+                  const SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFF6366F1).withOpacity(0.15),
+                          const Color(0xFF8B5CF6).withOpacity(0.1),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFF6366F1).withOpacity(0.25),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF6366F1).withOpacity(0.15),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                          spreadRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      const Color(0xFF6366F1),
+                                      const Color(0xFF8B5CF6),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF6366F1)
+                                          .withOpacity(0.4),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.analytics_outlined,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Visualize Your Data',
+                                      style: TextStyle(
+                                        color: isDark
+                                            ? Colors.white.withOpacity(0.95)
+                                            : const Color(0xFF1E293B),
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Interactive API Explorer',
+                                      style: TextStyle(
+                                        color: isDark
+                                            ? Colors.white.withOpacity(0.7)
+                                            : const Color(0xFF6366F1)
+                                                .withOpacity(0.8),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Explore the API documentation and visualize your financial data with interactive charts and graphs. Perfect for analyzing trends and patterns.',
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.8)
+                                  : const Color(0xFF475569),
+                              fontSize: 13,
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? Colors.white.withOpacity(0.1)
+                                        : Colors.white.withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: const Color(0xFF6366F1)
+                                          .withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '${_serverService.serverUrl}/docs',
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.white.withOpacity(0.9)
+                                          : const Color(0xFF6366F1),
+                                      fontSize: 12,
+                                      fontFamily: 'monospace',
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
