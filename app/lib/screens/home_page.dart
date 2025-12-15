@@ -78,9 +78,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
-          title: const Text("No Internet Connection"),
+          title: const Text("Pattern Matching Setup"),
           content: const Text(
-              "An internet connection is needed just once for the first setup. Please reconnect and try again."),
+              "Would you like to fetch the latest pattern matching rules from the internet, or continue with the built-in patterns?"),
           actions: [
             TextButton(
               onPressed: () async {
@@ -93,13 +93,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   _showInternetDialog();
                 }
               },
-              child: const Text("Retry"),
+              child: const Text("Fetch from Internet"),
             ),
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text("Continue Offline"),
+              child: const Text("Use Built-in Patterns"),
             ),
           ],
         ),
