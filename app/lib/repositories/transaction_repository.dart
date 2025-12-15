@@ -78,4 +78,51 @@ class TransactionRepository {
     final db = await DatabaseHelper.instance.database;
     await db.delete('transactions');
   }
+
+  /// Delete transactions associated with an account
+  /// Uses the same matching logic as TransactionProvider to identify transactions
+  Future<void> deleteTransactionsByAccount(String accountNumber, int bank) async {
+    final db = await DatabaseHelper.instance.database;
+    
+    // For banks that match by bankId only (Awash=2, Telebirr=6), delete all transactions for that bank
+    if (bank == 2 || bank == 6) {
+      await db.delete(
+        'transactions',
+        where: 'bankId = ?',
+        whereArgs: [bank],
+      );
+      return;
+    }
+    
+    // For other banks, match by accountNumber substring logic
+    String? accountSuffix;
+    
+    if (bank == 1 && accountNumber.length >= 4) {
+      // CBE: last 4 digits
+      accountSuffix = accountNumber.substring(accountNumber.length - 4);
+    } else if (bank == 4 && accountNumber.length >= 3) {
+      // Dashen: last 3 digits
+      accountSuffix = accountNumber.substring(accountNumber.length - 3);
+    } else if (bank == 3 && accountNumber.length >= 2) {
+      // Bank of Abyssinia: last 2 digits
+      accountSuffix = accountNumber.substring(accountNumber.length - 2);
+    }
+    
+    if (accountSuffix != null) {
+      // Delete transactions where bankId matches and accountNumber ends with the suffix
+      // Using SQL LIKE pattern matching to match the suffix at the end
+      await db.delete(
+        'transactions',
+        where: 'bankId = ? AND accountNumber IS NOT NULL AND accountNumber LIKE ?',
+        whereArgs: [bank, '%$accountSuffix'],
+      );
+    } else {
+      // Fallback: delete all transactions for this bank (except NULL accountNumber ones)
+      await db.delete(
+        'transactions',
+        where: 'bankId = ? AND accountNumber IS NOT NULL',
+        whereArgs: [bank],
+      );
+    }
+  }
 }
