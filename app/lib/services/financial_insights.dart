@@ -38,7 +38,8 @@ class InsightsService {
       expense: totalExpense,
       savingsRate: _savingsRate(totalIncome, totalExpense),
       variance: patterns["spendVariance"].toDouble(),
-      essentialsRatio: patterns["essentialsRatio"].toDouble(),
+      // essentialsRatio removed from health score calculation
+      // Will be improved in the future when better categorization is available
     );
 
     final budget = _budgetSuggestions(
@@ -134,20 +135,32 @@ class InsightsService {
     required double expense,
     required double savingsRate,
     required double variance,
-    required double essentialsRatio,
+    // essentialsRatio parameter removed - will be improved in the future
+    // when better categorization (essentials vs discretionary) is available
   }) {
-    // weighted blend: spend discipline, savings, stability, flexibility
+    // weighted blend: spend discipline, savings, stability
+    // Note: Essentials ratio component removed - currently all expenses are
+    // treated as essentials due to lack of categorization data.
+    // This will be improved in the future when transaction categorization
+    // becomes more sophisticated.
 
     final expenseIncomeRatio =
         income == 0 ? 1.0 : (expense / income).clamp(0, 2);
 
     final stability = 1 / (1 + variance);
-    final essentials = 1 - essentialsRatio;
 
-    double score = 0.35 * (1 - expenseIncomeRatio.clamp(0, 1)) +
-        0.25 * savingsRate.clamp(0, 1) +
-        0.20 * stability.clamp(0, 1) +
-        0.20 * essentials.clamp(0, 1);
+    // OLD IMPLEMENTATION (commented out for future reference):
+    // final essentials = 1 - essentialsRatio;
+    // double score = 0.35 * (1 - expenseIncomeRatio.clamp(0, 1)) +
+    //     0.25 * savingsRate.clamp(0, 1) +
+    //     0.20 * stability.clamp(0, 1) +
+    //     0.20 * essentials.clamp(0, 1);
+
+    // NEW IMPLEMENTATION: Removed essentials component
+    // Redistributed weights: expense/income (40%), savings (30%), stability (30%)
+    double score = 0.40 * (1 - expenseIncomeRatio.clamp(0, 1)) +
+        0.30 * savingsRate.clamp(0, 1) +
+        0.30 * stability.clamp(0, 1);
 
     return {'value': (score * 100).clamp(0, 100).round()};
   }
@@ -247,9 +260,11 @@ class InsightsService {
     // variance shows how volatile our spending is.
     final variance = MathUtils.findVariance(amounts);
 
-    // essentials ratio is how much we spend on essentials
-    // for now it's placeholder value, in case we get better tags we
-    // could more accurately calculate it.
+    // essentials ratio calculation (kept for future use, not currently used in health score)
+    // TODO: Improve this when better transaction categorization is available
+    // Currently, all expenses are treated as "essentials" since we don't have
+    // reliable way to distinguish essentials vs discretionary spending.
+    // This will be enhanced in the future with better categorization logic.
     final essenSpends =
         txns.where((t) => !_isIncome(t)).map((t) => t.amount).toList();
     final essentialsSpend = MathUtils.findSum(essenSpends);

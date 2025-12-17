@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:totals/data/consts.dart';
 import 'package:totals/models/transaction.dart';
 import 'package:totals/services/financial_insights.dart';
+import 'package:totals/widgets/insights/insights_explainer_bottomsheet.dart';
 
 class InsightsPage extends StatelessWidget {
   final List<Transaction> transactions;
@@ -21,6 +22,98 @@ class InsightsPage extends StatelessWidget {
     return 0.0;
   }
 
+  Widget _buildStabilityCard(BuildContext context, double variance) {
+    // Simple thresholds to convert raw variance into human-readable labels.
+    String label;
+    String description;
+    Color color;
+
+    if (variance < 50000) {
+      label = 'Stable';
+      description =
+          'Your spending is fairly predictable from month to month.';
+      color = Colors.green;
+    } else if (variance < 500000) {
+      label = 'Moderate';
+      description = 'Your spending changes, but not extremely.';
+      color = Colors.orange;
+    } else {
+      label = 'Very Irregular';
+      description =
+          'Your spending jumps a lot between months. Try smoothing big spikes.';
+      color = Colors.red;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color.withOpacity(0.18),
+            color.withOpacity(0.06),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: color.withOpacity(0.35),
+          width: 1.4,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.08),
+            ),
+            child: Icon(
+              Icons.show_chart,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Spending Stability',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color:
+                        Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _bankLabel(int? bankId) {
     if (bankId == null) return 'Unknown bank';
     for (final bank in AppConstants.banks) {
@@ -36,6 +129,15 @@ class InsightsPage extends StatelessWidget {
     } catch (_) {
       return 'Unknown date';
     }
+  }
+
+  String _formatLargeNumber(double value) {
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(2)}M';
+    } else if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(2)}K';
+    }
+    return value.toStringAsFixed(2);
   }
 
   @override
@@ -99,6 +201,23 @@ class InsightsPage extends StatelessWidget {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.help_outline,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            tooltip: 'Learn More',
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => const InsightsExplainerBottomSheet(),
+              );
+            },
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -155,6 +274,11 @@ class InsightsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 _buildScoreCard(context, score),
+                const SizedBox(height: 12),
+                _buildStabilityCard(
+                  context,
+                  _toDouble(patterns['spendVariance']),
+                ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -225,54 +349,38 @@ class InsightsPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (budget['targets'] != null) ...[
-                      const SizedBox(height: 12),
-                      const Divider(),
-                      const SizedBox(height: 12),
-                      ...(budget['targets'] as Map<String, dynamic>)
-                          .entries
-                          .map(
-                            (entry) => _buildInfoRow(
-                              context,
-                              entry.key.toUpperCase(),
-                              formatter.format(_toDouble(entry.value)),
-                            ),
-                          ),
-                    ],
+                    // Removed needs/wants targets - will be improved in the future
                   ],
                 ),
-                if (recurring.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  _buildSectionCard(
-                    context,
-                    'Recurring Expenses',
-                    Icons.repeat,
-                    recurring.map((item) {
-                      final map = item as Map<String, dynamic>;
-                      return _buildInfoRow(
-                        context,
-                        map['label'] as String,
-                        '${map['count']}x - ${formatter.format(_toDouble(map['avg']))}',
-                      );
-                    }).toList(),
-                  ),
-                ],
-                if (anomalies.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  _buildSectionCard(
-                    context,
-                    'Unusual Expenses',
-                    Icons.warning_amber_rounded,
-                    anomalies.take(5).map((t) {
-                      return _buildInfoRow(
-                        context,
-                        '${_bankLabel(t.bankId)} • ${_dateLabel(t.time)}',
-                        formatter.format(t.amount),
-                        isHighlight: true,
-                      );
-                    }).toList(),
-                  ),
-                ],
+                const SizedBox(height: 16),
+                _buildSectionCard(
+                  context,
+                  'Unusual Expenses',
+                  Icons.warning_amber_rounded,
+                  anomalies.isEmpty
+                      ? [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              'No unusual expenses detected. Your spending is consistent.',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ]
+                      : anomalies.take(5).map((t) {
+                          return _buildInfoRow(
+                            context,
+                            '${_bankLabel(t.bankId)} • ${_dateLabel(t.time)}',
+                            formatter.format(t.amount),
+                            isHighlight: true,
+                          );
+                        }).toList(),
+                ),
                 if (incomeAnomalies.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   _buildSectionCard(
@@ -296,18 +404,47 @@ class InsightsPage extends StatelessWidget {
                     'Spending Patterns',
                     Icons.insights,
                     [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Text(
-                          'Coming soon.',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
+                      ...(patterns['byCategory'] as Map<String, dynamic>)
+                          .entries
+                          .map(
+                        (entry) {
+                          final label = entry.key;
+                          final value = _toDouble(entry.value);
+                          String suffix = '';
+
+                          // Show percentage of total expenses for debit-like categories.
+                          if (totalExpense > 0 && label != 'CREDIT') {
+                            final pct = (value / totalExpense) * 100;
+                            suffix = ' (${pct.toStringAsFixed(1)}%)';
+                          }
+
+                          return _buildInfoRow(
+                            context,
+                            label,
+                            '${formatter.format(value)}$suffix',
+                          );
+                        },
                       ),
+                      const SizedBox(height: 12),
+                      const Divider(),
+                      const SizedBox(height: 12),
+                      _buildInfoRow(
+                        context,
+                        'Spending Variance',
+                        _formatLargeNumber(_toDouble(patterns['spendVariance'])),
+                      ),
+                      // Removed Essentials Share - will be improved in the future
+                      // when better categorization is available
                     ],
+                  ),
+                ],
+                // Recurring expenses at the end (expandable)
+                if (recurring.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _buildExpandableRecurringSection(
+                    context,
+                    recurring,
+                    formatter,
                   ),
                 ],
               ],
@@ -545,6 +682,137 @@ class InsightsPage extends StatelessWidget {
                   : Theme.of(context).colorScheme.onSurface,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpandableRecurringSection(
+    BuildContext context,
+    List<dynamic> recurring,
+    NumberFormat formatter,
+  ) {
+    return _ExpandableRecurringCard(
+      recurring: recurring,
+      formatter: formatter,
+      toDouble: _toDouble,
+    );
+  }
+}
+
+class _ExpandableRecurringCard extends StatefulWidget {
+  final List<dynamic> recurring;
+  final NumberFormat formatter;
+  final double Function(dynamic) toDouble;
+
+  const _ExpandableRecurringCard({
+    required this.recurring,
+    required this.formatter,
+    required this.toDouble,
+  });
+
+  @override
+  State<_ExpandableRecurringCard> createState() =>
+      _ExpandableRecurringCardState();
+}
+
+class _ExpandableRecurringCardState extends State<_ExpandableRecurringCard> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.16),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isExpanded = !_isExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.repeat,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Recurring Expenses',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${widget.recurring.length} items',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    _isExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isExpanded) ...[
+            const SizedBox(height: 12),
+            ...widget.recurring.map((item) {
+              final map = item as Map<String, dynamic>;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        map['label'] as String,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${map['count']}x - ${widget.formatter.format(widget.toDouble(map['avg']))}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
         ],
       ),
     );
