@@ -13,16 +13,24 @@ class CategoryRepository {
           'name': category.name,
           'essential': category.essential ? 1 : 0,
           'iconKey': category.iconKey,
+          'description': category.description,
         },
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
       batch.update(
         'categories',
         {
-          'essential': category.essential ? 1 : 0,
           'iconKey': category.iconKey,
         },
-        where: 'name = ?',
+        where: "name = ? AND (iconKey IS NULL OR iconKey = '')",
+        whereArgs: [category.name],
+      );
+      batch.update(
+        'categories',
+        {
+          'description': category.description,
+        },
+        where: "name = ? AND (description IS NULL OR description = '')",
         whereArgs: [category.name],
       );
     }
@@ -33,8 +41,47 @@ class CategoryRepository {
     final db = await DatabaseHelper.instance.database;
     final rows = await db.query(
       'categories',
-      orderBy: 'name COLLATE NOCASE ASC',
+      orderBy: 'essential DESC, name COLLATE NOCASE ASC',
     );
     return rows.map(Category.fromDb).toList();
+  }
+
+  Future<Category> createCategory({
+    required String name,
+    required bool essential,
+    String? iconKey,
+    String? description,
+  }) async {
+    final db = await DatabaseHelper.instance.database;
+    final trimmed = name.trim();
+    final id = await db.insert('categories', {
+      'name': trimmed,
+      'essential': essential ? 1 : 0,
+      'iconKey': iconKey,
+      'description': description,
+    });
+    return Category(
+      id: id,
+      name: trimmed,
+      essential: essential,
+      iconKey: iconKey,
+      description: description,
+    );
+  }
+
+  Future<void> updateCategory(Category category) async {
+    if (category.id == null) return;
+    final db = await DatabaseHelper.instance.database;
+    await db.update(
+      'categories',
+      {
+        'name': category.name.trim(),
+        'essential': category.essential ? 1 : 0,
+        'iconKey': category.iconKey,
+        'description': category.description,
+      },
+      where: 'id = ?',
+      whereArgs: [category.id],
+    );
   }
 }

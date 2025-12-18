@@ -53,7 +53,6 @@ class TransactionProvider with ChangeNotifier {
       // print all the accounts
       print("debug: Accounts: ${_accounts.map((a) => a.balance).join(', ')}");
 
-      await _categoryRepo.ensureSeeded();
       _categories = await _categoryRepo.getCategories();
       _categoryById = {
         for (final c in _categories)
@@ -395,6 +394,26 @@ class TransactionProvider with ChangeNotifier {
     await _transactionRepo.saveTransaction(
       transaction.copyWith(categoryId: null),
     );
+    await loadData();
+  }
+
+  Future<void> createCategory({
+    required String name,
+    required bool essential,
+    String? iconKey,
+    String? description,
+  }) async {
+    await _categoryRepo.createCategory(
+      name: name,
+      essential: essential,
+      iconKey: iconKey,
+      description: description,
+    );
+    await loadData();
+  }
+
+  Future<void> updateCategory(Category category) async {
+    await _categoryRepo.updateCategory(category);
     await loadData();
   }
 }

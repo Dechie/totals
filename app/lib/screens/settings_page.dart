@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:totals/providers/theme_provider.dart';
 import 'package:totals/providers/transaction_provider.dart';
 import 'package:totals/services/data_export_import_service.dart';
+import 'package:totals/screens/categories_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -206,6 +207,26 @@ class _SettingsPageState extends State<SettingsPage>
                   },
                 ),
                 const SizedBox(height: 16),
+
+                Card(
+                  child: ListTile(
+                    leading: Icon(
+                      Icons.category_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    title: const Text('Categories'),
+                    subtitle: const Text('Add or edit categories'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const CategoriesPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
 
                 // Export Button
                 Card(

@@ -20,7 +20,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -33,7 +33,8 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE,
         essential INTEGER NOT NULL DEFAULT 0,
-        iconKey TEXT
+        iconKey TEXT,
+        description TEXT
       )
     ''');
 
@@ -120,7 +121,7 @@ class DatabaseHelper {
     await db.execute(
         'CREATE INDEX idx_accounts_accountNumber ON accounts(accountNumber)');
 
-    await _upsertBuiltInCategories(db);
+    await _seedBuiltInCategories(db);
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
@@ -214,7 +215,8 @@ class DatabaseHelper {
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL UNIQUE,
           essential INTEGER NOT NULL DEFAULT 0,
-          iconKey TEXT
+          iconKey TEXT,
+          description TEXT
         )
       ''');
 
@@ -228,7 +230,7 @@ class DatabaseHelper {
       await db.execute(
           'CREATE INDEX IF NOT EXISTS idx_transactions_categoryId ON transactions(categoryId)');
 
-      await _upsertBuiltInCategories(db);
+      await _seedBuiltInCategories(db);
     }
 
     if (oldVersion < 6) {
@@ -237,11 +239,21 @@ class DatabaseHelper {
       } catch (e) {
         print("debug: Error adding iconKey column (might already exist): $e");
       }
-      await _upsertBuiltInCategories(db);
+      await _seedBuiltInCategories(db);
+    }
+
+    if (oldVersion < 7) {
+      try {
+        await db.execute('ALTER TABLE categories ADD COLUMN description TEXT');
+      } catch (e) {
+        print(
+            "debug: Error adding description column (might already exist): $e");
+      }
+      await _seedBuiltInCategories(db);
     }
   }
 
-  Future<void> _upsertBuiltInCategories(Database db) async {
+  Future<void> _seedBuiltInCategories(Database db) async {
     final batch = db.batch();
     for (final category in BuiltInCategories.all) {
       batch.insert(
@@ -256,10 +268,17 @@ class DatabaseHelper {
       batch.update(
         'categories',
         {
-          'essential': category.essential ? 1 : 0,
           'iconKey': category.iconKey,
         },
-        where: 'name = ?',
+        where: "name = ? AND (iconKey IS NULL OR iconKey = '')",
+        whereArgs: [category.name],
+      );
+      batch.update(
+        'categories',
+        {
+          'description': category.description,
+        },
+        where: "name = ? AND (description IS NULL OR description = '')",
         whereArgs: [category.name],
       );
     }
