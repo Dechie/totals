@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:totals/models/category.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -19,13 +20,23 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 6,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
   }
 
   Future<void> _createDB(Database db, int version) async {
+    // Categories table (seeded with built-ins)
+    await db.execute('''
+      CREATE TABLE categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        essential INTEGER NOT NULL DEFAULT 0,
+        iconKey TEXT
+      )
+    ''');
+
     // Transactions table
     await db.execute('''
       CREATE TABLE transactions (
@@ -41,6 +52,7 @@ class DatabaseHelper {
         type TEXT,
         transactionLink TEXT,
         accountNumber TEXT,
+        categoryId INTEGER,
         year INTEGER,
         month INTEGER,
         day INTEGER,
@@ -93,6 +105,8 @@ class DatabaseHelper {
     await db.execute(
         'CREATE INDEX idx_transactions_time ON transactions(time)');
     await db.execute(
+        'CREATE INDEX idx_transactions_categoryId ON transactions(categoryId)');
+    await db.execute(
         'CREATE INDEX idx_transactions_year_month ON transactions(year, month)');
     await db.execute(
         'CREATE INDEX idx_transactions_year_month_day ON transactions(year, month, day)');
@@ -105,6 +119,8 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX idx_accounts_bank ON accounts(bank)');
     await db.execute(
         'CREATE INDEX idx_accounts_accountNumber ON accounts(accountNumber)');
+
+    await _upsertBuiltInCategories(db);
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
@@ -191,6 +207,63 @@ class DatabaseHelper {
         print("debug: Error adding date columns (might already exist): $e");
       }
     }
+
+    if (oldVersion < 5) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS categories (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL UNIQUE,
+          essential INTEGER NOT NULL DEFAULT 0,
+          iconKey TEXT
+        )
+      ''');
+
+      try {
+        await db.execute(
+            'ALTER TABLE transactions ADD COLUMN categoryId INTEGER');
+      } catch (e) {
+        print("debug: Error adding categoryId column (might already exist): $e");
+      }
+
+      await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_transactions_categoryId ON transactions(categoryId)');
+
+      await _upsertBuiltInCategories(db);
+    }
+
+    if (oldVersion < 6) {
+      try {
+        await db.execute('ALTER TABLE categories ADD COLUMN iconKey TEXT');
+      } catch (e) {
+        print("debug: Error adding iconKey column (might already exist): $e");
+      }
+      await _upsertBuiltInCategories(db);
+    }
+  }
+
+  Future<void> _upsertBuiltInCategories(Database db) async {
+    final batch = db.batch();
+    for (final category in BuiltInCategories.all) {
+      batch.insert(
+        'categories',
+        {
+          'name': category.name,
+          'essential': category.essential ? 1 : 0,
+          'iconKey': category.iconKey,
+        },
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+      batch.update(
+        'categories',
+        {
+          'essential': category.essential ? 1 : 0,
+          'iconKey': category.iconKey,
+        },
+        where: 'name = ?',
+        whereArgs: [category.name],
+      );
+    }
+    await batch.commit(noResult: true);
   }
 
   Future<void> close() async {

@@ -144,8 +144,8 @@ class NotificationService {
     ]);
 
     final amount = '${sign}ETB ${formatNumberWithComma(transaction.amount)}';
-    if (counterparty == null) return amount;
-    return '$amount • $counterparty';
+    if (counterparty == null) return '$amount • Tap to categorize';
+    return '$amount • $counterparty • Tap to categorize';
   }
 
   static String? _firstNonEmpty(List<String?> values) {

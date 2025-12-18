@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:totals/providers/transaction_provider.dart';
+import 'package:totals/models/transaction.dart';
 import 'package:totals/services/sms_service.dart';
 import 'package:totals/widgets/auth_page.dart';
 import 'package:totals/widgets/home_tabs.dart';
@@ -22,6 +23,7 @@ import 'package:totals/screens/settings_page.dart';
 import 'package:totals/services/notification_service.dart';
 import 'package:totals/data/consts.dart';
 import 'package:totals/utils/text_utils.dart';
+import 'package:totals/widgets/recent_transactions_card.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -88,7 +90,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '$bankLabel: $sign ETB ${formatNumberWithComma(tx.amount)}',
+              '$bankLabel: $sign ETB ${formatNumberWithComma(tx.amount)} • Tap to categorize',
             ),
             duration: const Duration(seconds: 4),
           ),
@@ -213,11 +215,25 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   List<int> _getTabs() {
     final provider = Provider.of<TransactionProvider>(context, listen: false);
-    List<int> tabs = [0];
+    List<int> tabs = [0, HomeTabs.recentTabId];
     if (provider.bankSummaries.isNotEmpty) {
       tabs.addAll(provider.bankSummaries.map((b) => b.bankId));
     }
     return tabs;
+  }
+
+  List<Transaction> _todayTransactions(TransactionProvider provider) {
+    final now = DateTime.now();
+    return provider.allTransactions.where((t) {
+      final raw = t.time;
+      if (raw == null || raw.isEmpty) return false;
+      try {
+        final dt = DateTime.parse(raw).toLocal();
+        return dt.year == now.year && dt.month == now.month && dt.day == now.day;
+      } catch (_) {
+        return false;
+      }
+    }).toList(growable: false);
   }
 
   Widget _buildHomeContent(TransactionProvider provider) {
@@ -331,6 +347,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               height: 100), // Padding for floating nav
                         ],
                       )
+                    : tabId == HomeTabs.recentTabId
+                        ? ListView(
+                            children: [
+                              const SizedBox(height: 12),
+                              Builder(builder: (context) {
+                                final today = _todayTransactions(provider);
+                                return RecentTransactionsCard(
+                                  title: "Today's transactions",
+                                  transactions: today,
+                                  totalCount: today.length,
+                                  provider: provider,
+                                );
+                              }),
+                              const SizedBox(height: 100),
+                            ],
+                          )
                     : BankDetail(
                         bankId: tabId,
                         accountSummaries: provider.accountSummaries
@@ -370,12 +402,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     return Consumer<TransactionProvider>(
       builder: (context, provider, child) {
-        // Calculate tabs dynamically based on available banks
-        List<int> tabs = [0];
-        if (provider.bankSummaries.isNotEmpty) {
-          tabs.addAll(provider.bankSummaries.map((b) => b.bankId));
-        }
-
         return Scaffold(
           extendBody: true,
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
