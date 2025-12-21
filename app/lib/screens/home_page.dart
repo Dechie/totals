@@ -12,10 +12,10 @@ import 'package:totals/widgets/banks_summary_list.dart';
 import 'package:totals/widgets/bank_detail.dart';
 import 'package:totals/widgets/add_account_form.dart';
 import 'package:totals/widgets/total_balance_card.dart';
-import 'package:totals/widgets/failed_parse_dialog.dart';
 import 'package:totals/services/sms_config_service.dart';
 import 'package:totals/widgets/custom_bottom_nav.dart';
 import 'package:totals/widgets/detected_banks_widget.dart';
+import 'package:totals/screens/failed_parses_page.dart';
 import 'package:totals/screens/analytics_page.dart';
 import 'package:totals/screens/web_page.dart';
 import 'package:totals/screens/settings_page.dart';
@@ -370,6 +370,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _openFailedParsesPage() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const FailedParsesPage()),
+    );
+  }
+
   void changeTab(int tabId) {
     setState(() {
       activeTab = tabId;
@@ -711,8 +717,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     //           ),
                                     //         ),
                                     InkWell(
-                                      onTap: () =>
-                                          showFailedParseDialog(context),
+                                      onTap: _openFailedParsesPage,
                                       borderRadius: BorderRadius.circular(8),
                                       child: Tooltip(
                                         message: 'View Failed Parsings',
@@ -752,7 +757,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                 constraints: const BoxConstraints(),
                                 onSelected: (value) {
                                   if (value == 'failed_parse') {
-                                    showFailedParseDialog(context);
+                                    _openFailedParsesPage();
                                   }
                                 },
                                 itemBuilder: (context) => [
