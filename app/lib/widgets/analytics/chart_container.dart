@@ -20,6 +20,7 @@ class ChartContainer extends StatefulWidget {
   final List<Transaction> barChartTransactions;
   final List<Transaction> pnlTransactions;
   final DateTime? Function(Transaction) dateForTransaction;
+  final ValueChanged<DateTime>? onCalendarCellSelected;
   final VoidCallback onResetTimeFrame;
   final ValueChanged<bool> onNavigateTimeFrame;
 
@@ -38,6 +39,7 @@ class ChartContainer extends StatefulWidget {
     required this.barChartTransactions,
     required this.pnlTransactions,
     required this.dateForTransaction,
+    this.onCalendarCellSelected,
     required this.onResetTimeFrame,
     required this.onNavigateTimeFrame,
   });
@@ -104,6 +106,7 @@ class _ChartContainerState extends State<ChartContainer> {
           selectedCard: widget.selectedCard,
           transactions: widget.pnlTransactions,
           dateForTransaction: widget.dateForTransaction,
+          onDateSelected: widget.onCalendarCellSelected,
         );
         break;
       case 'Line Chart':

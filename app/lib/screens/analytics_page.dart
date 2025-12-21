@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:totals/providers/transaction_provider.dart';
 import 'package:totals/models/transaction.dart';
 import 'package:totals/models/summary_models.dart';
+import 'package:intl/intl.dart';
+import 'package:totals/screens/transactions_for_period_page.dart';
 import 'package:totals/widgets/analytics/time_period_selector.dart';
 import 'package:totals/widgets/analytics/filter_section.dart';
 import 'package:totals/widgets/analytics/income_expense_cards.dart';
@@ -336,6 +338,50 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     );
   }
 
+  List<Transaction> _transactionsForCalendarCell(
+    DateTime cellDate,
+    List<Transaction> transactions,
+  ) {
+    return transactions.where((transaction) {
+      final transactionDate = _resolveTransactionDate(transaction);
+      if (transactionDate == null) return false;
+      if (_selectedPeriod == 'Year') {
+        return transactionDate.year == cellDate.year &&
+            transactionDate.month == cellDate.month;
+      }
+      return transactionDate.year == cellDate.year &&
+          transactionDate.month == cellDate.month &&
+          transactionDate.day == cellDate.day;
+    }).toList();
+  }
+
+  String _formatCalendarSelectionLabel(DateTime cellDate) {
+    if (_selectedPeriod == 'Year') {
+      return DateFormat('MMMM yyyy').format(cellDate);
+    }
+    return DateFormat('MMM dd, yyyy').format(cellDate);
+  }
+
+  void _openCalendarTransactions(
+    DateTime cellDate,
+    List<Transaction> transactions,
+    TransactionProvider provider,
+  ) {
+    final filtered = _transactionsForCalendarCell(cellDate, transactions);
+    final subtitle = _formatCalendarSelectionLabel(cellDate);
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TransactionsForPeriodPage(
+          transactions: filtered,
+          provider: provider,
+          title: 'Transactions',
+          subtitle: subtitle,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<TransactionProvider>(
@@ -475,6 +521,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                       barChartTransactions: barChartTransactions,
                       pnlTransactions: pnlTransactions,
                       dateForTransaction: _resolveTransactionDate,
+                      onCalendarCellSelected: (date) {
+                        _openCalendarTransactions(
+                          date,
+                          pnlTransactions,
+                          provider,
+                        );
+                      },
                       onResetTimeFrame: _resetTimeFrame,
                       onNavigateTimeFrame: _navigateTimeFrame,
                     ),
