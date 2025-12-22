@@ -23,6 +23,10 @@ class IncomeExpenseCards extends StatelessWidget {
     required this.onCardSelected,
   });
 
+  DateTime _dateOnly(DateTime dateTime) {
+    return DateTime(dateTime.year, dateTime.month, dateTime.day);
+  }
+
   @override
   Widget build(BuildContext context) {
     final allTransactions =
@@ -51,19 +55,20 @@ class IncomeExpenseCards extends StatelessWidget {
 
         // Filter by period
         final now = getBaseDate();
+        final baseDay = _dateOnly(now);
         List<Transaction> periodFiltered = [];
 
         if (selectedPeriod == 'Week') {
-          int daysSinceMonday = (now.weekday - 1) % 7;
-          final weekStart = DateTime(now.year, now.month, now.day)
-              .subtract(Duration(days: daysSinceMonday));
+          int daysSinceMonday = (baseDay.weekday - 1) % 7;
+          final weekStart = baseDay.subtract(Duration(days: daysSinceMonday));
+          final weekEnd = weekStart.add(const Duration(days: 6));
           periodFiltered = allTransactions.where((t) {
             if (t.time == null) return false;
             try {
               final transactionDate = DateTime.parse(t.time!);
-              return transactionDate
-                      .isAfter(weekStart.subtract(const Duration(days: 1))) &&
-                  transactionDate.isBefore(now.add(const Duration(days: 1)));
+              final transactionDay = _dateOnly(transactionDate);
+              return !transactionDay.isBefore(weekStart) &&
+                  !transactionDay.isAfter(weekEnd);
             } catch (e) {
               return false;
             }
