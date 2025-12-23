@@ -1225,11 +1225,6 @@ class _FAQPageState extends State<FAQPage> {
 
   final List<Map<String, String>> _faqs = [
     {
-      'question': 'How do I add an account?',
-      'answer':
-          'Tap on the profile card at the top of settings to manage profiles and accounts.',
-    },
-    {
       'question': 'How do I export my data?',
       'answer':
           'Go to Settings > Export Data. You can choose to save the file directly or share it with other apps.',

@@ -52,7 +52,7 @@ class _DetectedBanksWidgetState extends State<DetectedBanksWidget>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
     if (!_needsSmsPermission) return;
-    _loadDetectedBanks(forceRefresh: true);
+    _loadDetectedBanks();
   }
 
   Future<void> _loadDetectedBanks({bool forceRefresh = false}) async {
@@ -99,7 +99,7 @@ class _DetectedBanksWidgetState extends State<DetectedBanksWidget>
     if (!mounted) return;
 
     if (status.isGranted) {
-      await _loadDetectedBanks(forceRefresh: true);
+      await _loadDetectedBanks();
       return;
     }
 
@@ -127,10 +127,8 @@ class _DetectedBanksWidgetState extends State<DetectedBanksWidget>
               child: RegisterAccountForm(
                 initialBankId: bank?.id,
                 onSubmit: () {
-                  // Clear cache and force refresh after adding account
-                  _detectionService.clearCache();
                   widget.onAccountAdded();
-                  _loadDetectedBanks(forceRefresh: true); // Refresh the list
+                  _loadDetectedBanks();
                 },
               ),
             ),

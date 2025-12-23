@@ -219,7 +219,7 @@ class _TransactionsListState extends State<TransactionsList> {
           itemCount: paginatedTransactions.length,
           itemBuilder: (context, index) {
             final transaction = paginatedTransactions[index];
-            return _TransactionItem(
+            return TransactionListItem(
               transaction: transaction,
               bankLabel: _getBankLabel(transaction),
               provider: widget.provider,
@@ -408,14 +408,14 @@ class _PaginationButton extends StatelessWidget {
   }
 }
 
-class _TransactionItem extends StatelessWidget {
+class TransactionListItem extends StatelessWidget {
   final Transaction transaction;
   final String bankLabel;
   final TransactionProvider? provider;
   final String Function(double) formatCurrency;
   final VoidCallback? onTap;
 
-  const _TransactionItem({
+  const TransactionListItem({
     required this.transaction,
     required this.bankLabel,
     required this.provider,

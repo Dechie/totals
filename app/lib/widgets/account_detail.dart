@@ -8,6 +8,10 @@ import 'package:intl/intl.dart';
 import 'package:totals/models/transaction.dart';
 import 'package:totals/providers/transaction_provider.dart';
 import 'package:totals/utils/text_utils.dart';
+import 'package:totals/widgets/analytics/transactions_list.dart';
+import 'package:totals/widgets/category_filter_button.dart';
+import 'package:totals/widgets/category_filter_sheet.dart';
+import 'package:totals/widgets/categorize_transaction_sheet.dart';
 
 class AccountDetailPage extends StatefulWidget {
   final String accountNumber;
@@ -25,6 +29,8 @@ class _AccountDetailPageState extends State<AccountDetailPage> {
   String searchTerm = "";
   bool showTotalBalance = false;
   bool isExpanded = false;
+  Set<int?> _selectedIncomeCategoryIds = {};
+  Set<int?> _selectedExpenseCategoryIds = {};
 
   // Date filter - default to last 30 days
   late DateTime _startDate;
@@ -90,6 +96,67 @@ class _AccountDetailPageState extends State<AccountDetailPage> {
     } catch (e) {
       return null;
     }
+  }
+
+  String _formatCurrency(double amount) {
+    return NumberFormat('#,##0.00').format(amount);
+  }
+
+  String _getBankLabel(Transaction transaction) {
+    final bankId = transaction.bankId ?? widget.bankId;
+    if (bankId == null) return 'Unknown bank';
+    try {
+      final bank = _banks.firstWhere((b) => b.id == bankId);
+      final shortName = bank.shortName.trim();
+      return shortName.isNotEmpty ? shortName : bank.name;
+    } catch (e) {
+      return 'Bank $bankId';
+    }
+  }
+
+  bool _matchesCategorySelection(int? categoryId, Set<int?> selection) {
+    if (selection.isEmpty) return true;
+    if (categoryId == null) return selection.contains(null);
+    return selection.contains(categoryId);
+  }
+
+  bool _matchesCategoryFilter(Transaction transaction) {
+    if (_selectedIncomeCategoryIds.isEmpty &&
+        _selectedExpenseCategoryIds.isEmpty) {
+      return true;
+    }
+    if (transaction.type == 'CREDIT') {
+      return _matchesCategorySelection(
+          transaction.categoryId, _selectedIncomeCategoryIds);
+    }
+    if (transaction.type == 'DEBIT') {
+      return _matchesCategorySelection(
+          transaction.categoryId, _selectedExpenseCategoryIds);
+    }
+    return true;
+  }
+
+  Future<void> _openCategoryFilterSheet(
+    TransactionProvider provider, {
+    required String flow,
+  }) async {
+    final result = await showCategoryFilterSheet(
+      context: context,
+      provider: provider,
+      selectedCategoryIds: flow == 'income'
+          ? _selectedIncomeCategoryIds
+          : _selectedExpenseCategoryIds,
+      flow: flow,
+      title: flow == 'income' ? 'Income categories' : 'Expense categories',
+    );
+    if (result == null) return;
+    setState(() {
+      if (flow == 'income') {
+        _selectedIncomeCategoryIds = result.toSet();
+      } else {
+        _selectedExpenseCategoryIds = result.toSet();
+      }
+    });
   }
 
   @override
@@ -212,10 +279,17 @@ class _AccountDetailPageState extends State<AccountDetailPage> {
             visibleTransaction.where((t) => t.type == "DEBIT").toList();
       }
 
+      // Apply Category Filters
+      visibleTransaction =
+          visibleTransaction.where(_matchesCategoryFilter).toList();
+
       // Sort by date desc
       visibleTransaction.sort((a, b) =>
           (DateTime.tryParse(b.time ?? "") ?? DateTime(0))
               .compareTo(DateTime.tryParse(a.time ?? "") ?? DateTime(0)));
+
+      final showIncomeFilter = activeTab != "Debits";
+      final showExpenseFilter = activeTab != "Credits";
 
       return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -515,7 +589,9 @@ class _AccountDetailPageState extends State<AccountDetailPage> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: Color(0xFF444750),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             ),
                           ),
                           GestureDetector(
@@ -554,76 +630,79 @@ class _AccountDetailPageState extends State<AccountDetailPage> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height *
-                          0.5, // ✅ Give height
-
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: visibleTransaction.length,
-                        itemBuilder: (context, index) {
-                          Transaction transaction = visibleTransaction[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 8.0),
-                            color: Theme.of(context).cardColor,
-                            child: ListTile(
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (transaction.creditor != null &&
-                                      transaction.creditor!.isNotEmpty)
-                                    Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 4.0),
-                                      child: Text(
-                                        transaction.creditor!.toUpperCase(),
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                          color: Color(0xFF444750),
-                                        ),
-                                      ),
-                                    ),
-                                  Text(
-                                    formatTime(transaction.time.toString()),
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          transaction.reference,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.grey[700],
-                                          ),
-                                        ),
-                                      ),
-                                      Text(
-                                        '${transaction.type == 'CREDIT' ? "+" : "-"} ${formatNumberWithComma(transaction.amount)} ETB',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                          color: transaction.type == 'CREDIT'
-                                              ? Colors.green
-                                              : Colors.red,
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                ],
-                              ),
+                    // Category Filter Buttons
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Filter by Category',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             ),
-                          );
-                        },
+                          ),
+                          Row(
+                            children: [
+                              if (showIncomeFilter)
+                                CategoryFilterIconButton(
+                                  icon: Icons.toc_rounded,
+                                  iconColor: Colors.green,
+                                  flipIconHorizontally: true,
+                                  selectedCount:
+                                      _selectedIncomeCategoryIds.length,
+                                  tooltip: 'Income categories',
+                                  onTap: () => _openCategoryFilterSheet(
+                                    provider,
+                                    flow: 'income',
+                                  ),
+                                ),
+                              if (showIncomeFilter && showExpenseFilter)
+                                const SizedBox(width: 8),
+                              if (showExpenseFilter)
+                                CategoryFilterIconButton(
+                                  icon: Icons.toc_rounded,
+                                  iconColor:
+                                      Theme.of(context).colorScheme.error,
+                                  flipIconHorizontally: true,
+                                  selectedCount:
+                                      _selectedExpenseCategoryIds.length,
+                                  tooltip: 'Expense categories',
+                                  onTap: () => _openCategoryFilterSheet(
+                                    provider,
+                                    flow: 'expense',
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: visibleTransaction.length,
+                      itemBuilder: (context, index) {
+                        final transaction = visibleTransaction[index];
+                        return TransactionListItem(
+                          transaction: transaction,
+                          bankLabel: _getBankLabel(transaction),
+                          provider: provider,
+                          formatCurrency: _formatCurrency,
+                          onTap: () async {
+                            await showCategorizeTransactionSheet(
+                              context: context,
+                              provider: provider,
+                              transaction: transaction,
+                            );
+                          },
+                        );
+                      },
                     ),
                   ]),
                 ),
