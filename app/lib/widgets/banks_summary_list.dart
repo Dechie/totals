@@ -60,9 +60,8 @@ class _BanksSummaryListState extends State<BanksSummaryList> {
     // Reload banks from database when widget updates (e.g., after refresh)
     // This ensures we have the latest bank data including newly synced banks
     _loadBanks();
-    // Reload detected banks to pick up any new banks from database
-    // Use forceRefresh to ensure we detect newly synced banks
-    _loadUnregisteredBanks(forceRefresh: true);
+    // Reload detected banks from cache to reflect any account changes
+    _loadUnregisteredBanks();
   }
 
   Future<void> _loadUnregisteredBanks({bool forceRefresh = false}) async {
@@ -94,10 +93,8 @@ class _BanksSummaryListState extends State<BanksSummaryList> {
               child: RegisterAccountForm(
                 initialBankId: bank.id,
                 onSubmit: () {
-                  // Clear cache and force refresh after adding account
-                  _detectionService.clearCache();
                   widget.onAccountAdded();
-                  _loadUnregisteredBanks(forceRefresh: true);
+                  _loadUnregisteredBanks();
                 },
               ),
             ),

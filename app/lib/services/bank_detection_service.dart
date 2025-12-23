@@ -59,7 +59,6 @@ class DetectedBank {
 class BankDetectionService {
   static const String _cacheKey = 'detected_banks_cache';
   static const String _cacheTimestampKey = 'detected_banks_cache_timestamp';
-  static const Duration _cacheValidDuration = Duration(hours: 1);
 
   final Telephony _telephony = Telephony.instance;
   final AccountRepository _accountRepo = AccountRepository();
@@ -68,7 +67,8 @@ class BankDetectionService {
 
   /// Scans the SMS inbox and returns banks that the user has messages from
   /// but hasn't registered an account for yet.
-  /// Uses cache for faster loading, refreshes in background.
+  /// Uses cached results for faster loading. Scans SMS only when cache is empty
+  /// or forceRefresh is true.
   Future<List<DetectedBank>> detectUnregisteredBanks({
     bool forceRefresh = false,
   }) async {
@@ -86,9 +86,6 @@ class BankDetectionService {
           final filtered = cachedBanks
               .where((db) => !registeredBankIds.contains(db.bank.id))
               .toList();
-
-          // Refresh cache in background
-          _refreshCacheInBackground();
 
           return filtered;
         }
@@ -113,22 +110,10 @@ class BankDetectionService {
     }
   }
 
-  /// Get cached detected banks if valid
+  /// Get cached detected banks if available
   Future<List<DetectedBank>?> _getCachedBanks() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final timestampStr = prefs.getString(_cacheTimestampKey);
-
-      if (timestampStr == null) return null;
-
-      final timestamp = DateTime.parse(timestampStr);
-      final now = DateTime.now();
-
-      // Check if cache is still valid
-      if (now.difference(timestamp) > _cacheValidDuration) {
-        return null;
-      }
-
       final cacheJson = prefs.getString(_cacheKey);
       if (cacheJson == null) return null;
 
@@ -204,20 +189,6 @@ class BankDetectionService {
     } catch (e) {
       print("debug: Error clearing bank cache: $e");
     }
-  }
-
-  /// Refresh cache in background without blocking
-  void _refreshCacheInBackground() {
-    Future(() async {
-      try {
-        List<Account> registeredAccounts = await _accountRepo.getAccounts();
-        Set<int> registeredBankIds =
-            registeredAccounts.map((a) => a.bank).toSet();
-        await _scanAndCacheBanks(registeredBankIds);
-      } catch (e) {
-        print("debug: Background cache refresh failed: $e");
-      }
-    });
   }
 
   /// Scan SMS and cache results
@@ -311,7 +282,6 @@ class BankDetectionService {
       if (!forceRefresh) {
         final cachedBanks = await _getCachedBanks();
         if (cachedBanks != null) {
-          _refreshCacheInBackground();
           return cachedBanks;
         }
       }
