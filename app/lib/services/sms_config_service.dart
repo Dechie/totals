@@ -446,6 +446,66 @@ class SmsConfigService {
       refRequired: true,
       hasAccount: true,
     ),
+    SmsPattern(
+      bankId: 8,
+      senderId: "MPESA",
+      regex:
+          r"you\s+have\s+deposited\s+(?<amount>[\d,.]+)\s+Birr\s+with\s+agent\s+(?<agent>.*?)\s+on\s+(?<date>\d{1,2}/\d{1,2}/\d{2})\s+at\s+(?<time>\d{1,2}:\d{2}\s+[AP]M)\.\s+Transaction\s+number\s+(?<reference>[A-Z0-9]+)\.\s+Your\s+current\s+M-PESA\s+balance\s+is\s+(?<balance>[\d,.]+)\s+Birr",
+      type: "CREDIT",
+      description: "M-PESA Deposit from Agent",
+      refRequired: true,
+      hasAccount: false,
+    ),
+    SmsPattern(
+      bankId: 8,
+      senderId: "MPESA",
+      regex:
+          r"የ(?<amount>[\d,.]+)\s+ብር\s+የሳፋሪኮም\s+ጥቅል\s+ለ(?<account>\d+)\s+በ(?<date>\d{1,2}/\d{1,2}/\d{2})\s+በ(?<time>\d{1,2}:\d{2}\s+[AP]M)\s+ላይ\s+ገዝተዋል።\s+የገንዘብ\s+ዝውውር\s+መለያ\s+ቁጥር\s+(?<reference>[A-Z0-9]+)\s+ነው።.*?አሁን\s+ያለዎት\s+የM-PESA\s+ቀሪ\s+ሒሳብ\s+(?<balance>[\d,.]+)\s+ብር",
+      type: "DEBIT",
+      description: "M-PESA Bundle Purchase (Amharic)",
+      refRequired: true,
+      hasAccount: true,
+    ),
+    SmsPattern(
+      bankId: 8,
+      senderId: "MPESA",
+      regex:
+          r"you\s+have\s+paid\s+(?<amount>[\d,.]+)\s+Birr\s+to\s+(?<receiver>\d+\s+-\s+.*?)\s+on\s+(?<date>\d{1,2}/\d{1,2}/\d{2}).*?at\s+(?<time>\d{1,2}:\d{2}\s+[AP]M)\.\s+Transaction\s+number\s+(?<reference>[A-Z0-9]+).*?Your\s+M-PESA\s+balance\s+is\s+(?<balance>[\d,.]+)\s+Birr",
+      type: "DEBIT",
+      description: "M-PESA Payment to Merchant",
+      refRequired: true,
+      hasAccount: true,
+    ),
+    SmsPattern(
+      bankId: 8,
+      senderId: "MPESA",
+      regex:
+          r"(?<amount>[\d,.]+)\s+ብር\s+ከ\s+(?<sender>.*?)\s+በ\s+(?<date>\d{1,2}/\d{1,2}/\d{2})\s+በ\s+(?<time>\d{1,2}:\d{2}\s+[AP]M)\s+ላይ\s+ተቀብለዋል።\s+የገንዘብ\s+ዝውውር\s+መለያ\s+ቁጥር\s+(?<reference>[A-Z0-9]+)\s+ነው።.*?የM-PESA\s+ቀሪ\s+ሒሳብ\s+(?<balance>[\d,.]+)\s+ብር",
+      type: "CREDIT",
+      description: "M-PESA Received from Bank (Amharic)",
+      refRequired: true,
+      hasAccount: false,
+    ),
+    SmsPattern(
+      bankId: 8,
+      senderId: "MPESA",
+      regex:
+          r"የ(?<amount>[\d,.]+)\s+ብር\s+የአየር\s+ሰዓት\s+ለራስዎ\s+ስልክ\s+በ(?<date>\d{1,2}/\d{1,2}/\d{2})\s+(?<time>\d{1,2}:\d{2}\s+[AP]M)\s+ላይ\s+ገዝተዋል።\s+የገንዘብ\s+ዝውውር\s+መለያ\s+ቁጥር\s+(?<reference>[A-Z0-9]+)\s+ነው።.*?አሁን\s+ያልዎት\s+የM-PESA\s+ቀሪ\s+ሒሳብ\s+(?<balance>[\d,.]+)\s+ብር",
+      type: "DEBIT",
+      description: "M-PESA Airtime for Self (Amharic)",
+      refRequired: true,
+      hasAccount: false,
+    ),
+    SmsPattern(
+      bankId: 8,
+      senderId: "MPESA",
+      regex:
+          r"ተመላሽ\s+ስለሆነ\s+(?<amount>[\d,.]+)\s+ብር\s+ወደ\s+M-PESA\s+ሒሳብዎ\s+ገቢ\s+ተደርጓል።\s+የገንዘብ\s+ዝውውር\s+መለያ\s+ቁጥር\s+(?<reference>[A-Z0-9]+)\s+ነው።.*?የM-PESA\s+ቀሪ\s+ሂሳብ\s+(?<balance>[\d,.]+)\s+ብር",
+      type: "CREDIT",
+      description: "M-PESA Reversal (Amharic)",
+      refRequired: true,
+      hasAccount: false,
+    ),
   ];
   void debugSms(String smsText) {
     // Show invisible characters
