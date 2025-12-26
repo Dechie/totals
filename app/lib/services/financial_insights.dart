@@ -3,11 +3,12 @@ import 'dart:math';
 import 'package:totals/models/category.dart';
 
 import '../models/transaction.dart';
+import '../utils/map_keys.dart';
 import '../utils/math_utils.dart';
-import '../utils/pattern_keys.dart';
 
 class InsightsService {
-  static const int _scoreVersion = 2; // v1 = no categories, v2 = category aware.
+  static const int _scoreVersion =
+      2; // v1 = no categories, v2 = category aware.
   final List<Transaction> Function() _getTransactions;
 
   // function that maps categoryId to Category? (nullable Category)
@@ -66,11 +67,11 @@ class InsightsService {
     final patterns = _spendingPatterns(transactions);
     // we add these to the summary map so that the UI
     // can use them later.
-    patterns[PatternKeys.essentialsRatio] = essentialsRatio;
-    patterns[PatternKeys.categorizedCoverage] = categorizedCoverage;
-    patterns[PatternKeys.essentialSpend] = categoryBreakdown.essential;
-    patterns[PatternKeys.nonEssentialSpend] = categoryBreakdown.nonEssential;
-    patterns[PatternKeys.uncategorizedSpend] = categoryBreakdown.uncategorized;
+    patterns[MapKeys.essentialsRatio] = essentialsRatio;
+    patterns[MapKeys.categorizedCoverage] = categorizedCoverage;
+    patterns[MapKeys.essentialSpend] = categoryBreakdown.essential;
+    patterns[MapKeys.nonEssentialSpend] = categoryBreakdown.nonEssential;
+    patterns[MapKeys.uncategorizedSpend] = categoryBreakdown.uncategorized;
 
     final recurring = _recurring(expenses);
     final anomalies = _anomalies(expenses);
@@ -81,10 +82,11 @@ class InsightsService {
       income: totalIncome,
       expense: totalExpense,
       savingsRate: _savingsRate(totalIncome, totalExpense),
-      variance: (patterns[PatternKeys.spendVariance] ?? 0.0).toDouble(),
-      stabilityIndex: (patterns[PatternKeys.stabilityIndex] ?? 0.0).toDouble(),
-      essentialsRatio: (patterns[PatternKeys.essentialsRatio] ?? 0.0).toDouble(),
-      categorizedCoverage: (patterns[PatternKeys.categorizedCoverage] ?? 0.0).toDouble(),
+      variance: (patterns[MapKeys.spendVariance] ?? 0.0).toDouble(),
+      stabilityIndex: (patterns[MapKeys.stabilityIndex] ?? 0.0).toDouble(),
+      essentialsRatio: (patterns[MapKeys.essentialsRatio] ?? 0.0).toDouble(),
+      categorizedCoverage:
+          (patterns[MapKeys.categorizedCoverage] ?? 0.0).toDouble(),
       // essentialsRatio removed from health score calculation
       // Will be improved in the future when better categorization is available
     );
@@ -92,21 +94,21 @@ class InsightsService {
     final budget = _budgetSuggestions(
       totalIncome: totalIncome,
       totalExpense: totalExpense,
-      categoryTotals: patterns[PatternKeys.byCategory] as Map<String, double>,
-      essentialsSpend: patterns[PatternKeys.essentialSpend] as double,
-      nonEssentialsSpend: patterns[PatternKeys.nonEssentialSpend] as double,
+      categoryTotals: patterns[MapKeys.byCategory] as Map<String, double>,
+      essentialsSpend: patterns[MapKeys.essentialSpend] as double,
+      nonEssentialsSpend: patterns[MapKeys.nonEssentialSpend] as double,
     );
 
     _cache = {
-      "totalIncome": totalIncome,
-      "totalExpense": totalExpense,
-      "patterns": patterns,
-      "recurring": recurring,
-      "anomalies": anomalies,
-      "incomeAnomalies": incomeAnomalies,
-      "projections": projections,
-      "score": score,
-      "budget": budget,
+      MapKeys.totalIncome: totalIncome,
+      MapKeys.totalExpense: totalExpense,
+      MapKeys.patterns: patterns,
+      MapKeys.recurring: recurring,
+      MapKeys.anomalies: anomalies,
+      MapKeys.incomeAnomalies: incomeAnomalies,
+      MapKeys.projections: projections,
+      MapKeys.score: score,
+      MapKeys.budget: budget,
     };
     return _cache!;
   }
@@ -267,7 +269,7 @@ class InsightsService {
     // users will have categorized only a small percentage of the sms messages,
     // so the rest will be "uncategorized". This will affect the calculation
     // of the financial health score. So we will make sure that it will not make
-    // the results biased, by using the coverage factor to derive 
+    // the results biased, by using the coverage factor to derive
     // the essentials component of the equation.
     // Higher coverage = more confidence = higher weight for essentials component
     double coverageFactor = 0.0;
@@ -313,6 +315,39 @@ class InsightsService {
 
     // Fallback to sign only when type is unknown
     return t.amount >= 0;
+  }
+
+  /// Log coverage metrics for production tracking
+  /// This helps us understand user categorization patterns and coverage levels
+  void _logCoverageMetrics({
+    required double categorizedCoverage,
+    required double categorizedTotal,
+    required double totalExpense,
+    required double essential,
+    required double nonEssential,
+    required double uncategorized,
+    required double essentialsRatio,
+  }) {
+    // Determine coverage level for logging
+    String coverageLevel;
+    if (categorizedCoverage < 0.3) {
+      coverageLevel = 'LOW';
+    } else if (categorizedCoverage <= 0.7) {
+      coverageLevel = 'MEDIUM';
+    } else {
+      coverageLevel = 'HIGH';
+    }
+
+    // Log structured data for production analysis
+    print(
+        '[INSIGHTS_COVERAGE] coverage: ${(categorizedCoverage * 100).toStringAsFixed(1)}%, '
+        'level: $coverageLevel, '
+        'categorized: ${categorizedTotal.toStringAsFixed(2)}, '
+        'total: ${totalExpense.toStringAsFixed(2)}, '
+        'essential: ${essential.toStringAsFixed(2)}, '
+        'nonEssential: ${nonEssential.toStringAsFixed(2)}, '
+        'uncategorized: ${uncategorized.toStringAsFixed(2)}, '
+        'essentialsRatio: ${(essentialsRatio * 100).toStringAsFixed(1)}%');
   }
 
   Map<String, dynamic> _projections(
@@ -396,8 +431,15 @@ class InsightsService {
     final double stabilityIndex = 1 / (1 + (variance / k));
 
     return {
-      'spendVariance': variance.toDouble(),
-      'stabilityIndex': stabilityIndex.clamp(0.0, 1.0),
+      MapKeys.byCategory: byCategory,
+      MapKeys.spendVariance: variance.toDouble(),
+      MapKeys.stabilityIndex: stabilityIndex.clamp(0.0, 1.0),
+      // Initialize other expected keys with default values
+      MapKeys.essentialsRatio: 0.0,
+      MapKeys.categorizedCoverage: 0.0,
+      MapKeys.essentialSpend: 0.0,
+      MapKeys.nonEssentialSpend: 0.0,
+      MapKeys.uncategorizedSpend: 0.0,
     };
   }
 
@@ -425,38 +467,6 @@ class InsightsService {
     final beforeLast = sorted[sorted.length - 2].value;
 
     return last - beforeLast;
-  }
-
-  /// Log coverage metrics for production tracking
-  /// This helps us understand user categorization patterns and coverage levels
-  void _logCoverageMetrics({
-    required double categorizedCoverage,
-    required double categorizedTotal,
-    required double totalExpense,
-    required double essential,
-    required double nonEssential,
-    required double uncategorized,
-    required double essentialsRatio,
-  }) {
-    // Determine coverage level for logging
-    String coverageLevel;
-    if (categorizedCoverage < 0.3) {
-      coverageLevel = 'LOW';
-    } else if (categorizedCoverage <= 0.7) {
-      coverageLevel = 'MEDIUM';
-    } else {
-      coverageLevel = 'HIGH';
-    }
-
-    // Log structured data for production analysis
-    print('[INSIGHTS_COVERAGE] coverage: ${(categorizedCoverage * 100).toStringAsFixed(1)}%, '
-        'level: $coverageLevel, '
-        'categorized: ${categorizedTotal.toStringAsFixed(2)}, '
-        'total: ${totalExpense.toStringAsFixed(2)}, '
-        'essential: ${essential.toStringAsFixed(2)}, '
-        'nonEssential: ${nonEssential.toStringAsFixed(2)}, '
-        'uncategorized: ${uncategorized.toStringAsFixed(2)}, '
-        'essentialsRatio: ${(essentialsRatio * 100).toStringAsFixed(1)}%');
   }
 }
 

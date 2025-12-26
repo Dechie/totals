@@ -4,10 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:totals/data/consts.dart';
 import 'package:totals/models/transaction.dart';
 import 'package:totals/providers/transaction_provider.dart';
-import '../utils/pattern_keys.dart';
+import 'package:totals/screens/transactions_for_period_page.dart';
 import 'package:totals/services/financial_insights.dart';
 import 'package:totals/widgets/insights/insights_explainer_bottomsheet.dart';
-import 'package:totals/screens/transactions_for_period_page.dart';
+
+import '../utils/map_keys.dart';
 
 class InsightsPage extends StatelessWidget {
   final List<Transaction> transactions;
@@ -21,343 +22,350 @@ class InsightsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final txProvider = Provider.of<TransactionProvider>(context, listen: false);
+    final insightsService = InsightsService(
+      () => transactions,
+      getCategoryById: txProvider.getCategoryById,
+    );
+
+    final insights = insightsService.summarize();
     try {
-      final txProvider = Provider.of<TransactionProvider>(context, listen: false);
-      final insightsService = InsightsService(
-        () => transactions,
-        getCategoryById: txProvider.getCategoryById,
-      );
+      final score = (insights[MapKeys.score] as Map<String, dynamic>)['value'] as int;
+      final projections = insights[MapKeys.projections] as Map<String, dynamic>;
+      final budget = insights[MapKeys.budget] as Map<String, dynamic>;
+      final patterns = insights[MapKeys.patterns] as Map<String, dynamic>;
+      final recurring = insights[MapKeys.recurring] as List<dynamic>;
+      final anomalies = insights[MapKeys.anomalies] as List<Transaction>;
+      final incomeAnomalies = insights[MapKeys.incomeAnomalies] as List<Transaction>;
+      final totalIncome = _toDouble(insights[MapKeys.totalIncome]);
+      final totalExpense = _toDouble(insights[MapKeys.totalExpense]);
 
-      final insights = insightsService.summarize();
+      final formatter = NumberFormat.currency(symbol: 'ETB ', decimalDigits: 2);
 
-    final score = insights['score']['value'] as int;
-    final projections = insights['projections'] as Map<String, dynamic>;
-    final budget = insights['budget'] as Map<String, dynamic>;
-    final patterns = insights['patterns'] as Map<String, dynamic>;
-    final recurring = insights['recurring'] as List<dynamic>;
-    final anomalies = insights['anomalies'] as List<Transaction>;
-    final incomeAnomalies = insights['incomeAnomalies'] as List<Transaction>;
-    final totalIncome = _toDouble(insights['totalIncome']);
-    final totalExpense = _toDouble(insights['totalExpense']);
+      final double categorizedCoverage =
+          _toDouble(patterns[MapKeys.categorizedCoverage]);
+      final bool lowCoverage = categorizedCoverage < 0.7;
 
-    final formatter = NumberFormat.currency(symbol: 'ETB ', decimalDigits: 2);
-
-    final double categorizedCoverage =
-        _toDouble(patterns[PatternKeys.categorizedCoverage]);
-    final bool lowCoverage = categorizedCoverage < 0.7;
-
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: false,
-        titleSpacing: 16,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              ),
-              child: Icon(
-                Icons.lightbulb,
-                color: Theme.of(context).colorScheme.primary,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Financial Insights',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+      return Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: false,
+          titleSpacing: 16,
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                 ),
-                if (periodLabel != null)
-                  Text(
-                    periodLabel!,
+                child: Icon(
+                  Icons.lightbulb,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Financial Insights',
                     style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-              ],
+                  if (periodLabel != null)
+                    Text(
+                      periodLabel!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              icon: Icon(
+                Icons.help_outline,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              tooltip: 'Learn More',
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => const InsightsExplainerBottomSheet(),
+                );
+              },
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.help_outline,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                Theme.of(context).scaffoldBackgroundColor,
+              ],
             ),
-            tooltip: 'Learn More',
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (context) => const InsightsExplainerBottomSheet(),
-              );
-            },
           ),
-        ],
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).colorScheme.primary.withOpacity(0.08),
-              Theme.of(context).scaffoldBackgroundColor,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceVariant
-                        .withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
                       color: Theme.of(context)
                           .colorScheme
-                          .outline
-                          .withOpacity(0.18),
+                          .surfaceVariant
+                          .withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .outline
+                            .withOpacity(0.18),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'This is still experimental, financial score might not be accurate.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
+                  const SizedBox(height: 12),
+                  // Show categorization encouragement banner when coverage is low
+                  if (lowCoverage) ...[
+                    _buildCategorizationBanner(
+                      context,
+                      categorizedCoverage,
+                      transactions,
+                      txProvider,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  _buildScoreCard(context, score, lowCoverage: lowCoverage),
+                  const SizedBox(height: 12),
+                  _buildStabilityCard(
+                    context,
+                    _toDouble(patterns[MapKeys.spendVariance]),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
                     children: [
-                      Icon(
-                        Icons.info_outline,
-                        size: 18,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 8),
                       Expanded(
+                        child: _buildSummaryCard(
+                          context,
+                          'Total Income',
+                          formatter.format(totalIncome),
+                          Icons.trending_up,
+                          Colors.green,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildSummaryCard(
+                          context,
+                          'Total Expense',
+                          formatter.format(totalExpense),
+                          Icons.trending_down,
+                          Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSectionCard(
+                    context,
+                    'Projections',
+                    Icons.auto_graph,
+                    [
+                      _buildInfoRow(
+                        context,
+                        'Projected Income',
+                        formatter.format(
+                          _toDouble(projections['projectedIncome']),
+                        ),
+                      ),
+                      _buildInfoRow(
+                        context,
+                        'Projected Expense',
+                        formatter.format(
+                          _toDouble(projections['projectedExpense']),
+                        ),
+                      ),
+                      _buildInfoRow(
+                        context,
+                        'Projected Savings',
+                        formatter.format(
+                          _toDouble(projections['projectedSavings']),
+                        ),
+                        isHighlight: true,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSectionCard(
+                    context,
+                    'Budget Tips',
+                    Icons.savings,
+                    [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Text(
-                          'This is still experimental, financial score might not be accurate.',
+                          budget['tip'] as String,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 14,
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
+                      // Removed needs/wants targets - will be improved in the future
                     ],
                   ),
-                ),
-                const SizedBox(height: 12),
-                // Show categorization encouragement banner when coverage is low
-                if (lowCoverage) ...[
-                  _buildCategorizationBanner(
+                  const SizedBox(height: 16),
+                  _buildSectionCard(
                     context,
-                    categorizedCoverage,
-                    transactions,
-                    txProvider,
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                _buildScoreCard(context, score, lowCoverage: lowCoverage),
-                const SizedBox(height: 12),
-                _buildStabilityCard(
-                  context,
-                  _toDouble(patterns[PatternKeys.spendVariance]),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildSummaryCard(
-                        context,
-                        'Total Income',
-                        formatter.format(totalIncome),
-                        Icons.trending_up,
-                        Colors.green,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildSummaryCard(
-                        context,
-                        'Total Expense',
-                        formatter.format(totalExpense),
-                        Icons.trending_down,
-                        Colors.red,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _buildSectionCard(
-                  context,
-                  'Projections',
-                  Icons.auto_graph,
-                  [
-                    _buildInfoRow(
-                      context,
-                      'Projected Income',
-                      formatter.format(
-                        _toDouble(projections['projectedIncome']),
-                      ),
-                    ),
-                    _buildInfoRow(
-                      context,
-                      'Projected Expense',
-                      formatter.format(
-                        _toDouble(projections['projectedExpense']),
-                      ),
-                    ),
-                    _buildInfoRow(
-                      context,
-                      'Projected Savings',
-                      formatter.format(
-                        _toDouble(projections['projectedSavings']),
-                      ),
-                      isHighlight: true,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _buildSectionCard(
-                  context,
-                  'Budget Tips',
-                  Icons.savings,
-                  [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text(
-                        budget['tip'] as String,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    // Removed needs/wants targets - will be improved in the future
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _buildSectionCard(
-                  context,
-                  'Unusual Expenses',
-                  Icons.warning_amber_rounded,
-                  anomalies.isEmpty
-                      ? [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(
-                              'No unusual expenses detected. Your spending is consistent.',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
+                    'Unusual Expenses',
+                    Icons.warning_amber_rounded,
+                    anomalies.isEmpty
+                        ? [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                'No unusual expenses detected. Your spending is consistent.',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
                               ),
                             ),
-                          ),
-                        ]
-                      : anomalies.take(5).map((t) {
-                          return _buildInfoRow(
-                            context,
-                            '${_bankLabel(t.bankId)} • ${_dateLabel(t.time)}',
-                            formatter.format(t.amount),
-                            isHighlight: true,
-                          );
-                        }).toList(),
-                ),
-                if (incomeAnomalies.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  _buildSectionCard(
-                    context,
-                    'Unusual Income',
-                    Icons.trending_up,
-                    incomeAnomalies.take(5).map((t) {
-                      return _buildInfoRow(
-                        context,
-                        '${_bankLabel(t.bankId)} • ${_dateLabel(t.time)}',
-                        formatter.format(t.amount),
-                        isHighlight: true,
-                      );
-                    }).toList(),
+                          ]
+                        : anomalies.take(5).map((t) {
+                            return _buildInfoRow(
+                              context,
+                              '${_bankLabel(t.bankId)} • ${_dateLabel(t.time)}',
+                              formatter.format(t.amount),
+                              isHighlight: true,
+                            );
+                          }).toList(),
                   ),
-                ],
-                if (patterns['spendVariance'] != null) ...[
-                  const SizedBox(height: 16),
-                  _buildSectionCard(
-                    context,
-                    'Spending Patterns',
-                    Icons.insights,
-                    [
-                      ...(patterns[PatternKeys.byCategory] as Map<String, dynamic>)
-                          .entries
-                          .map(
-                        (entry) {
-                          final label = entry.key;
-                          final value = _toDouble(entry.value);
-                          String suffix = '';
+                  if (incomeAnomalies.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _buildSectionCard(
+                      context,
+                      'Unusual Income',
+                      Icons.trending_up,
+                      incomeAnomalies.take(5).map((t) {
+                        return _buildInfoRow(
+                          context,
+                          '${_bankLabel(t.bankId)} • ${_dateLabel(t.time)}',
+                          formatter.format(t.amount),
+                          isHighlight: true,
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                  if (patterns['spendVariance'] != null) ...[
+                    const SizedBox(height: 16),
+                    _buildSectionCard(
+                      context,
+                      'Spending Patterns',
+                      Icons.insights,
+                      [
+                        ...(patterns[MapKeys.byCategory]
+                                as Map<String, dynamic>)
+                            .entries
+                            .map(
+                          (entry) {
+                            final label = entry.key;
+                            final value = _toDouble(entry.value);
+                            String suffix = '';
 
-                          // Show percentage of total expenses for debit-like categories.
-                          if (totalExpense > 0 && label != 'CREDIT') {
-                            final pct = (value / totalExpense) * 100;
-                            suffix = ' (${pct.toStringAsFixed(1)}%)';
-                          }
+                            // Show percentage of total expenses for debit-like categories.
+                            if (totalExpense > 0 && label != 'CREDIT') {
+                              final pct = (value / totalExpense) * 100;
+                              suffix = ' (${pct.toStringAsFixed(1)}%)';
+                            }
 
-                          return _buildInfoRow(
-                            context,
-                            label,
-                            '${formatter.format(value)}$suffix',
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      const Divider(),
-                      const SizedBox(height: 12),
-                      _buildInfoRow(
-                        context,
-                        'Spending Variance',
-                        _formatLargeNumber(
-                            _toDouble(patterns[PatternKeys.stabilityIndex])),
-                      ),
-                      // Removed Essentials Share - will be improved in the future
-                      // when better categorization is available
-                    ],
-                  ),
+                            return _buildInfoRow(
+                              context,
+                              label,
+                              '${formatter.format(value)}$suffix',
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        const Divider(),
+                        const SizedBox(height: 12),
+                        _buildInfoRow(
+                          context,
+                          'Spending Variance',
+                          _formatLargeNumber(
+                              _toDouble(patterns[MapKeys.stabilityIndex])),
+                        ),
+                        // Removed Essentials Share - will be improved in the future
+                        // when better categorization is available
+                      ],
+                    ),
+                  ],
+                  // Recurring expenses at the end (expandable)
+                  if (recurring.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _buildExpandableRecurringSection(
+                      context,
+                      recurring,
+                      formatter,
+                    ),
+                  ],
                 ],
-                // Recurring expenses at the end (expandable)
-                if (recurring.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  _buildExpandableRecurringSection(
-                    context,
-                    recurring,
-                    formatter,
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
     } catch (e, stackTrace) {
       // Log error for debugging
       print('[INSIGHTS_PAGE_ERROR] Error building insights page: $e');
       print('[INSIGHTS_PAGE_ERROR] Stack trace: $stackTrace');
-      
+      List<String> json = [];
+      json.add("insights values: {");
+      for (var element in insights.entries) {
+        json.add("....${element.key}': ${element.value}");
+      }
+      json.add("}");
       // Show error UI instead of grey screen
       return Scaffold(
         appBar: AppBar(
@@ -366,34 +374,51 @@ class InsightsPage extends StatelessWidget {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Error loading insights',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Error: $e',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    // Try to rebuild
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Go Back'),
-                ),
-              ],
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error loading insights',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Error: $e',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Try to rebuild
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Go Back'),
+                  ),
+                  const SizedBox(height: 16),
+                  ...json.map(
+                    (j) => SizedBox(
+                      width: double.infinity,
+                      child: SingleChildScrollView(
+                        child: Text(
+                          j,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -407,6 +432,171 @@ class InsightsPage extends StatelessWidget {
       if (bank.id == bankId) return bank.shortName;
     }
     return 'Bank($bankId)';
+  }
+
+  Widget _buildCategorizationBanner(
+    BuildContext context,
+    double categorizedCoverage,
+    List<Transaction> transactions,
+    TransactionProvider provider,
+  ) {
+    try {
+      final coveragePercent = (categorizedCoverage * 100).toStringAsFixed(0);
+      final uncategorizedCount = transactions.where((t) {
+        try {
+          return !_isIncome(t) && t.categoryId == null;
+        } catch (e) {
+          print('[INSIGHTS_PAGE_ERROR] Error in _isIncome check: $e');
+          return false;
+        }
+      }).length;
+
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Theme.of(context).colorScheme.primary.withOpacity(0.15),
+              Theme.of(context).colorScheme.primary.withOpacity(0.05),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            width: 1.5,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color:
+                        Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.label_outline,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Improve Your Insights',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$coveragePercent% of your spending is categorized. '
+                        'Categorize more transactions for better insights!',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      try {
+                        // Navigate to transactions page filtered to uncategorized
+                        final uncategorizedTransactions =
+                            transactions.where((t) {
+                          try {
+                            return !_isIncome(t) && t.categoryId == null;
+                          } catch (e) {
+                            print(
+                                '[INSIGHTS_PAGE_ERROR] Error filtering transactions: $e');
+                            return false;
+                          }
+                        }).toList();
+
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => TransactionsForPeriodPage(
+                              transactions: uncategorizedTransactions.isEmpty
+                                  ? transactions
+                                  : uncategorizedTransactions,
+                              provider: provider,
+                              title: uncategorizedTransactions.isEmpty
+                                  ? 'All Transactions'
+                                  : 'Uncategorized Transactions',
+                              subtitle: uncategorizedTransactions.isEmpty
+                                  ? null
+                                  : '$uncategorizedCount transactions need categorization',
+                            ),
+                          ),
+                        );
+                      } catch (e, stackTrace) {
+                        print(
+                            '[INSIGHTS_PAGE_ERROR] Error navigating to transactions: $e');
+                        print('[INSIGHTS_PAGE_ERROR] Stack trace: $stackTrace');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e')),
+                        );
+                      }
+                    },
+                    icon: Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    label: Text(
+                      uncategorizedCount > 0
+                          ? 'Categorize $uncategorizedCount Transactions'
+                          : 'View Transactions',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 1.5,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    } catch (e, stackTrace) {
+      print('[INSIGHTS_PAGE_ERROR] Error in _buildCategorizationBanner: $e');
+      print('[INSIGHTS_PAGE_ERROR] Stack trace: $stackTrace');
+      // Return empty container on error to prevent grey screen
+      return const SizedBox.shrink();
+    }
   }
 
   Widget _buildExpandableRecurringSection(
@@ -771,178 +961,6 @@ class InsightsPage extends StatelessWidget {
     return value.toStringAsFixed(2);
   }
 
-  double _toDouble(dynamic value) {
-    if (value is double) return value;
-    if (value is int) return value.toDouble();
-    if (value is String) return double.tryParse(value) ?? 0.0;
-    return 0.0;
-  }
-
-  Widget _buildCategorizationBanner(
-    BuildContext context,
-    double categorizedCoverage,
-    List<Transaction> transactions,
-    TransactionProvider provider,
-  ) {
-    try {
-      final coveragePercent = (categorizedCoverage * 100).toStringAsFixed(0);
-      final uncategorizedCount = transactions
-          .where((t) {
-            try {
-              return !_isIncome(t) && t.categoryId == null;
-            } catch (e) {
-              print('[INSIGHTS_PAGE_ERROR] Error in _isIncome check: $e');
-              return false;
-            }
-          })
-          .length;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.15),
-            Theme.of(context).colorScheme.primary.withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-          width: 1.5,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.label_outline,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Improve Your Insights',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$coveragePercent% of your spending is categorized. '
-                      'Categorize more transactions for better insights!',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    try {
-                      // Navigate to transactions page filtered to uncategorized
-                      final uncategorizedTransactions = transactions
-                          .where((t) {
-                            try {
-                              return !_isIncome(t) && t.categoryId == null;
-                            } catch (e) {
-                              print('[INSIGHTS_PAGE_ERROR] Error filtering transactions: $e');
-                              return false;
-                            }
-                          })
-                          .toList();
-                      
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => TransactionsForPeriodPage(
-                            transactions: uncategorizedTransactions.isEmpty
-                                ? transactions
-                                : uncategorizedTransactions,
-                            provider: provider,
-                            title: uncategorizedTransactions.isEmpty
-                                ? 'All Transactions'
-                                : 'Uncategorized Transactions',
-                            subtitle: uncategorizedTransactions.isEmpty
-                                ? null
-                                : '$uncategorizedCount transactions need categorization',
-                          ),
-                        ),
-                      );
-                    } catch (e, stackTrace) {
-                      print('[INSIGHTS_PAGE_ERROR] Error navigating to transactions: $e');
-                      print('[INSIGHTS_PAGE_ERROR] Stack trace: $stackTrace');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error: $e')),
-                      );
-                    }
-                  },
-                  icon: Icon(
-                    Icons.edit_outlined,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  label: Text(
-                    uncategorizedCount > 0
-                        ? 'Categorize $uncategorizedCount Transactions'
-                        : 'View Transactions',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    side: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 1.5,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-    } catch (e, stackTrace) {
-      print('[INSIGHTS_PAGE_ERROR] Error in _buildCategorizationBanner: $e');
-      print('[INSIGHTS_PAGE_ERROR] Stack trace: $stackTrace');
-      // Return empty container on error to prevent grey screen
-      return const SizedBox.shrink();
-    }
-  }
-
   bool _isIncome(Transaction t) {
     try {
       final type = t.type?.toUpperCase() ?? '';
@@ -950,9 +968,17 @@ class InsightsPage extends StatelessWidget {
       if (type.contains("DEBIT")) return false;
       return t.amount >= 0;
     } catch (e) {
-      print('[INSIGHTS_PAGE_ERROR] Error in _isIncome: $e, transaction: ${t.reference}');
+      print(
+          '[INSIGHTS_PAGE_ERROR] Error in _isIncome: $e, transaction: ${t.reference}');
       return false;
     }
+  }
+
+  double _toDouble(dynamic value) {
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
   }
 }
 
