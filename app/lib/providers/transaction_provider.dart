@@ -352,8 +352,10 @@ class TransactionProvider with ChangeNotifier {
   }
 
   Future<void> clearCategoryForTransaction(Transaction transaction) async {
+    // Use copyWith with clearCategoryId flag to explicitly set categoryId to null
     await _transactionRepo.saveTransaction(
-      transaction.copyWith(categoryId: null),
+      transaction.copyWith(clearCategoryId: true),
+      skipAutoCategorization: true,
     );
     await loadData();
   }
