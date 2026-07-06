@@ -3,7 +3,7 @@ import 'package:totals/models/transaction.dart';
 import 'package:totals/repositories/category_repository.dart';
 import 'package:totals/repositories/transaction_repository.dart';
 import 'package:totals/services/bank_config_service.dart';
-import 'package:totals/services/telebirr_bank_transfer_service.dart';
+import 'package:totals/services/cross_bank_transfer_service.dart';
 import 'package:totals/utils/text_utils.dart';
 
 class CategoryExpense {
@@ -31,7 +31,7 @@ class WidgetDataProvider {
   final TransactionRepository _transactionRepository;
   final CategoryRepository _categoryRepository;
   final BankConfigService _bankConfigService;
-  final TelebirrBankTransferService _telebirrMatchService;
+  final CrossBankTransferService _crossBankMatchService;
 
   static const List<String> _rankColors = [
     '#5AC8FA',
@@ -43,14 +43,14 @@ class WidgetDataProvider {
     TransactionRepository? transactionRepository,
     CategoryRepository? categoryRepository,
     BankConfigService? bankConfigService,
-    TelebirrBankTransferService? telebirrMatchService,
+    CrossBankTransferService? crossBankMatchService,
   })
       : _transactionRepository =
             transactionRepository ?? TransactionRepository(),
         _categoryRepository = categoryRepository ?? CategoryRepository(),
         _bankConfigService = bankConfigService ?? BankConfigService(),
-        _telebirrMatchService =
-            telebirrMatchService ?? TelebirrBankTransferService();
+        _crossBankMatchService =
+            crossBankMatchService ?? CrossBankTransferService();
 
   Future<List<Transaction>> _getTransactionsByTypeForRange(
     String type,
@@ -134,11 +134,11 @@ class WidgetDataProvider {
   ) async {
     if (transactions.isEmpty) return <String>{};
     final banks = await _bankConfigService.getBanks();
-    final matches = _telebirrMatchService.findMatches(transactions, banks);
+    final matches = _crossBankMatchService.findMatches(transactions, banks);
     final toSelfReferences = <String>{};
 
     for (final match in matches) {
-      toSelfReferences.add(match.bankTransaction.reference);
+      toSelfReferences.add(match.debitTransaction.reference);
     }
     toSelfReferences.addAll(_buildCashTransferToReferences(transactions));
     return toSelfReferences;

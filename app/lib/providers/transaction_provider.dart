@@ -18,7 +18,8 @@ import 'package:totals/services/bank_config_service.dart';
 import 'package:totals/services/budget_alert_service.dart';
 import 'package:totals/services/auto_categorization_service.dart';
 import 'package:totals/services/notification_settings_service.dart';
-import 'package:totals/services/telebirr_bank_transfer_service.dart';
+import 'package:totals/services/cross_bank_transfer_service.dart';
+import 'package:totals/services/bank_transfer_rules.dart';
 import 'package:totals/services/widget_service.dart';
 import 'package:totals/utils/account_balance_resolver.dart';
 import 'package:totals/utils/auto_categorization_rules_share_payload.dart';
@@ -168,8 +169,8 @@ class TransactionProvider with ChangeNotifier {
   final BudgetAlertService _budgetAlertService = BudgetAlertService();
   final AutoCategorizationService _autoCategorizationService =
       AutoCategorizationService.instance;
-  final TelebirrBankTransferService _telebirrMatchService =
-      TelebirrBankTransferService();
+  final CrossBankTransferService _crossBankMatchService =
+      CrossBankTransferService();
 
   List<Transaction> _transactions = [];
   List<Account> _accounts = [];
@@ -580,7 +581,7 @@ class TransactionProvider with ChangeNotifier {
         for (final bank in banks) bank.id: bank.shortName,
       };
       final labels = _buildSelfTransferLabels(
-        _telebirrMatchService.findMatches(_allTransactions, banks),
+        _crossBankMatchService.findMatches(_allTransactions, banks),
       );
       labels.addAll(_buildCashTransferLabels(_allTransactions));
       _selfTransferLabelByReference = labels;
@@ -978,12 +979,12 @@ class TransactionProvider with ChangeNotifier {
   }
 
   Map<String, String> _buildSelfTransferLabels(
-    List<TelebirrBankTransferMatch> matches,
+    List<CrossBankTransferMatch> matches,
   ) {
     final labels = <String, String>{};
     for (final match in matches) {
-      labels[match.telebirrTransaction.reference] = 'from self';
-      labels[match.bankTransaction.reference] = 'to self';
+      labels[match.creditTransaction.reference] = 'from self';
+      labels[match.debitTransaction.reference] = 'to self';
     }
     return labels;
   }
